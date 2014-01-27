@@ -1,0 +1,27 @@
+{
+    "name" : "dcarbone/soap-plus",
+    "type" : "library",
+    "description" : "More Better PHP Soap implementation",
+
+    "authors" : [
+        {
+            "name" : "Daniel Carbone",
+            "email" : "daniel.p.carbone@gmail.com"
+        }
+    ],
+
+    "require" : {
+        "php" : ">=5.3.3",
+        "lib-curl" : "*",
+        "lib-openssl" : "*",
+        "lib-libxml" : "*",
+
+        "dcarbone/o-curl": "0.1.*"
+    },
+
+    "autoload" : {
+        "psr-0" : {
+            "DCarbone\\SoapPlus\\" : "lib/"
+        }
+    }
+}
