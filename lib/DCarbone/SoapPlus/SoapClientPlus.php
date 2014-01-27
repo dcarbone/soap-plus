@@ -284,7 +284,10 @@ class SoapClientPlus extends \SoapClient
         }
         catch (\Exception $e)
         {
-            throw new \Exception('DCarbone\SoapClientPlus::createArgumentArrayFromXML - Error found while parsing ActionBody: "'.libxml_get_last_error()->message.'"');
+            if (libxml_get_last_error() !== false)
+                throw new \Exception('DCarbone\SoapClientPlus::createArgumentArrayFromXML - Error found while parsing ActionBody: "'.libxml_get_last_error()->message.'"');
+            else
+                throw new \Exception('DCarbone\SoapClientPlus::createArgumentArrayFromXML - Error found while parsing ActionBody: Unknown');
         }
 
         if (!($sxe instanceof \SimpleXMLElement))
