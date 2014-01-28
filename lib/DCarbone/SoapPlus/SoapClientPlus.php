@@ -19,16 +19,18 @@ class SoapClientPlus extends \SoapClient
     protected $soapOptions;
 
     /** @var array */
-    protected $optArray = array(
-        CURLOPT_HEADER => false,
+    protected $curlOptArray = array(
         CURLOPT_FAILONERROR => true,
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_SSL_VERIFYHOST => false,
         CURLOPT_SSL_VERIFYPEER => false,
+        CURLOPT_POST => true,
+        CURLOPT_HEADER => true,
+        CURLINFO_HEADER_OUT => true,
     );
 
     /** @var array */
-    protected $httpHeaders = array(
+    protected $curlHttpHeaders = array(
         'Content-type: text/xml;charset="utf-8"',
         'Accept: text/xml',
         'Cache-Control: no-cache',
@@ -92,7 +94,7 @@ class SoapClientPlus extends \SoapClient
             unset($this->soapOptions['login'], $this->soapOptions['password']);
 
             // Set the password in the client
-            $this->optArray[CURLOPT_USERPWD] = $this->login.':'.$this->password;
+            $this->curlOptArray[CURLOPT_USERPWD] = $this->login.':'.$this->password;
 
             // Attempt to set the Auth type requested
             if (isset($this->options['auth_type']))
@@ -100,11 +102,11 @@ class SoapClientPlus extends \SoapClient
                 $authType = strtolower($this->options['auth_type']);
                 switch($authType)
                 {
-                    case 'basic'    : $this->optArray[CURLOPT_HTTPAUTH] = CURLAUTH_BASIC;   break;
-                    case 'ntlm'     : $this->optArray[CURLOPT_HTTPAUTH] = CURLAUTH_NTLM;    break;
-                    case 'digest'   : $this->optArray[CURLOPT_HTTPAUTH] = CURLAUTH_DIGEST;  break;
-                    case 'any'      : $this->optArray[CURLOPT_HTTPAUTH] = CURLAUTH_ANY;     break;
-                    case 'anysafe'  : $this->optArray[CURLOPT_HTTPAUTH] = CURLAUTH_ANYSAFE; break;
+                    case 'basic'    : $this->curlOptArray[CURLOPT_HTTPAUTH] = CURLAUTH_BASIC;   break;
+                    case 'ntlm'     : $this->curlOptArray[CURLOPT_HTTPAUTH] = CURLAUTH_NTLM;    break;
+                    case 'digest'   : $this->curlOptArray[CURLOPT_HTTPAUTH] = CURLAUTH_DIGEST;  break;
+                    case 'any'      : $this->curlOptArray[CURLOPT_HTTPAUTH] = CURLAUTH_ANY;     break;
+                    case 'anysafe'  : $this->curlOptArray[CURLOPT_HTTPAUTH] = CURLAUTH_ANYSAFE; break;
 
                     default :
                         throw new \InvalidArgumentException('Unknown Authentication type "'.$this->options['auth_type'].'" requested');
@@ -113,7 +115,7 @@ class SoapClientPlus extends \SoapClient
             }
             else
             {
-                $this->optArray[CURLOPT_HTTPAUTH] = CURLAUTH_ANY;
+                $this->curlOptArray[CURLOPT_HTTPAUTH] = CURLAUTH_ANY;
             }
         }
     }
@@ -166,7 +168,7 @@ class SoapClientPlus extends \SoapClient
 
         // First, load the wsdl
         $this->curlClient->setURL($wsdlURL);
-        $this->curlClient->setOptArray($this->optArray);
+        $this->curlClient->setOptArray($this->curlOptArray);
         $response = $this->curlClient->execute();
         // Check for error
         if ($response instanceof CurlErrorBase)
@@ -225,16 +227,6 @@ class SoapClientPlus extends \SoapClient
         fwrite($file, $wsdlString, strlen($wsdlString));
         fclose($file);
         return static::$wsdlCachePath.DIRECTORY_SEPARATOR.'Temp'.DIRECTORY_SEPARATOR.$wsdlName.'.xml';
-    }
-
-    /**
-     * Get the CurlClient instance being used
-     *
-     * @return CurlClient
-     */
-    public function &getCurlClient()
-    {
-        return $this->curlClient;
     }
 
     /**
@@ -324,12 +316,11 @@ class SoapClientPlus extends \SoapClient
     public function __doRequest($request, $location, $action, $version, $one_way = 0)
     {
         $this->curlClient->setURL($location);
-        $this->curlClient->setOpt(CURLOPT_POST, true);
         $this->curlClient->setOpt(CURLOPT_POSTFIELDS, $request);
-        $this->curlClient->setOptArray($this->optArray);
+        $this->curlClient->setOptArray($this->curlOptArray);
 
         // Add the header strings
-        foreach($this->httpHeaders as $headerString)
+        foreach($this->curlHttpHeaders as $headerString)
         {
             $this->curlClient->addHTTPHeaderString($headerString);
         }
@@ -340,5 +331,68 @@ class SoapClientPlus extends \SoapClient
             throw new \Exception('DCarbone\SoapClientPlus::__doRequest - CURL Error during call: "'. addslashes($ret->getError()).'", "'.addslashes($ret->getResponse()).'"');
 
         return $ret->getResponse();
-   }
+    }
+
+    /**
+     * @param int $curlOpt
+     * @param $value
+     */
+    public function addCurlOpt($curlOpt, $value)
+    {
+        $this->curlOptArray[$curlOpt] = $value;
+    }
+
+    /**
+     * @param int $curlOpt
+     * @return null
+     */
+    public function removeCurlOpt($curlOpt)
+    {
+        if (!array_key_exists($curlOpt, $this->curlOptArray))
+            return null;
+
+        $val = $this->curlOptArray[$curlOpt];
+        unset($this->curlOptArray[$curlOpt]);
+        return $val;
+    }
+
+    /**
+     * @param array $opts
+     */
+    public function setCurlOptArray(array $opts)
+    {
+        $this->curlOptArray = $opts;
+    }
+
+    /**
+     * @return array
+     */
+    public function &getCurlOptArray()
+    {
+        return $this->curlOptArray;
+    }
+
+    /**
+     * @param string $header
+     */
+    public function addHttpHeader($header)
+    {
+        $this->curlHttpHeaders[] = $header;
+    }
+
+    /**
+     * @return array
+     */
+    public function &getHttpHeaders()
+    {
+        return $this->curlHttpHeaders;
+    }
+
+    /**
+     * @param array $headers
+     */
+    public function setHttpHeaders(array $headers)
+    {
+        $this->curlHttpHeaders = $headers;
+    }
 }
