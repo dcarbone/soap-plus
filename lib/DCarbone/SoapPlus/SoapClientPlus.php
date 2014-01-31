@@ -72,7 +72,7 @@ class SoapClientPlus extends \SoapClient
     /**
      * @return CurlClient
      */
-    public function getCurlClient()
+    public function &getCurlClient()
     {
         return $this->curlClient;
     }
