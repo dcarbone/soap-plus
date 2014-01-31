@@ -70,6 +70,14 @@ class SoapClientPlus extends \SoapClient
     }
 
     /**
+     * @return CurlClient
+     */
+    public function getCurlClient()
+    {
+        return $this->curlClient;
+    }
+
+    /**
      * Parse the options array
      *
      * @throws \InvalidArgumentException
