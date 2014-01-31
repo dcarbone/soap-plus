@@ -24,8 +24,6 @@ class SoapClientPlus extends \SoapClient
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_SSL_VERIFYHOST => false,
         CURLOPT_SSL_VERIFYPEER => false,
-        CURLOPT_POST => true,
-        CURLOPT_HEADER => true,
         CURLINFO_HEADER_OUT => true,
     );
 
