@@ -333,7 +333,24 @@ class SoapClientPlus extends \SoapClient implements IOCurlContainer
     }
 
     /**
-     * @return \DCarbone\CurlPlus\CurlPlusClient
+     * @param array $requestHeaders
+     * @return void
+     */
+    public function setDefaultRequestHeaders(array $requestHeaders)
+    {
+        $this->defaultRequestHeaders = $requestHeaders;
+    }
+
+    /**
+     * @return array
+     */
+    public function getDefaultRequestHeaders()
+    {
+        return $this->defaultRequestHeaders;
+    }
+
+    /**
+     * @return CurlPlusClient
      */
     public function &getClient()
     {
@@ -361,9 +378,28 @@ class SoapClientPlus extends \SoapClient implements IOCurlContainer
      * @param string $header
      * @return void
      */
-    public function addRequestHeader($header)
+    public function addRequestHeaderString($header)
     {
         $this->getClient()->addRequestHeaderString($header);
+    }
+
+    /**
+     * @param int $opt
+     * @param mixed $value
+     * @return void
+     */
+    public function setCurlOpt($opt, $value)
+    {
+        $this->getClient()->setCurlOpt($opt, $value);
+    }
+
+    /**
+     * @param int $opt
+     * @return void
+     */
+    public function removeCurlOpt($opt)
+    {
+        $this->getClient()->removeCurlOpt($opt);
     }
 
     /**
@@ -391,20 +427,4 @@ class SoapClientPlus extends \SoapClient implements IOCurlContainer
         $this->getClient()->resetCurlOpts();
     }
 
-    /**
-     * @param array $requestHeaders
-     * @return void
-     */
-    public function setDefaultRequestHeaders(array $requestHeaders)
-    {
-        $this->defaultRequestHeaders = $requestHeaders;
-    }
-
-    /**
-     * @return array
-     */
-    public function getDefaultRequestHeaders()
-    {
-        return $this->defaultRequestHeaders;
-    }
 }
