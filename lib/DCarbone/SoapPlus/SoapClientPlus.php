@@ -1,15 +1,16 @@
 <?php namespace DCarbone\SoapPlus;
 
-use DCarbone\OCURL\CurlClient;
-use DCarbone\OCURL\Error\CurlErrorBase;
+use DCarbone\CurlPlus\CurlPlusClient;
+use DCarbone\CurlPlus\Error\CurlErrorBase;
+use DCarbone\CurlPlus\IOCurlContainer;
 
 /**
  * Class SoapClientPlus
  * @package DCarbone\SoapPlus
  */
-class SoapClientPlus extends \SoapClient
+class SoapClientPlus extends \SoapClient implements IOCurlContainer
 {
-    /** @var \DCarbone\OCURL\CurlClient */
+    /** @var \DCarbone\CurlPlus\CurlPlusClient */
     protected $curlClient;
 
     /** @var array */
@@ -28,7 +29,7 @@ class SoapClientPlus extends \SoapClient
     );
 
     /** @var array */
-    protected $curlHttpHeaders = array(
+    protected $defaultRequestHeaders = array(
         'Content-type: text/xml;charset="utf-8"',
         'Accept: text/xml',
         'Cache-Control: no-cache',
@@ -53,7 +54,7 @@ class SoapClientPlus extends \SoapClient
      */
     public function __construct($wsdl, array $options = array())
     {
-        $this->curlClient = new CurlClient();
+        $this->curlClient = new CurlPlusClient();
 
         static::$wsdlCachePath = realpath(__DIR__.DIRECTORY_SEPARATOR.'WSDL');
 
@@ -67,14 +68,6 @@ class SoapClientPlus extends \SoapClient
             $wsdl = $this->loadWSDL($wsdl);
 
         parent::SoapClient($wsdl, $this->soapOptions);
-    }
-
-    /**
-     * @return CurlClient
-     */
-    public function &getCurlClient()
-    {
-        return $this->curlClient;
     }
 
     /**
@@ -173,8 +166,8 @@ class SoapClientPlus extends \SoapClient
         // Otherwise move on!
 
         // First, load the wsdl
-        $this->curlClient->setURL($wsdlURL);
-        $this->curlClient->setOptArray($this->curlOptArray);
+        $this->curlClient->setRequestUrl($wsdlURL);
+        $this->curlClient->setCurlOpts($this->curlOptArray);
         $response = $this->curlClient->execute();
         // Check for error
         if ($response instanceof CurlErrorBase)
@@ -321,16 +314,16 @@ class SoapClientPlus extends \SoapClient
      */
     public function __doRequest($request, $location, $action, $version, $one_way = 0)
     {
-        $this->curlClient->setURL($location);
-        $this->curlClient->setOpt(CURLOPT_POSTFIELDS, $request);
-        $this->curlClient->setOptArray($this->curlOptArray);
+        $this->curlClient->setRequestUrl($location);
+        $this->curlClient->setCurlOpt(CURLOPT_POSTFIELDS, $request);
+        $this->curlClient->setCurlOpts($this->curlOptArray);
 
         // Add the header strings
-        foreach($this->curlHttpHeaders as $headerString)
+        foreach($this->defaultRequestHeaders as $headerString)
         {
-            $this->curlClient->addHTTPHeaderString($headerString);
+            $this->getClient()->addRequestHeaderString($headerString);
         }
-        $this->curlClient->addHTTPHeaderString('SOAPAction: "'.$action.'"');
+        $this->curlClient->addRequestHeaderString('SOAPAction: "'.$action.'"');
 
         $ret = $this->curlClient->execute();
         if ($ret instanceof CurlErrorBase)
@@ -340,65 +333,78 @@ class SoapClientPlus extends \SoapClient
     }
 
     /**
-     * @param int $curlOpt
-     * @param $value
+     * @return \DCarbone\CurlPlus\CurlPlusClient
      */
-    public function addCurlOpt($curlOpt, $value)
+    public function &getClient()
     {
-        $this->curlOptArray[$curlOpt] = $value;
-    }
-
-    /**
-     * @param int $curlOpt
-     * @return null
-     */
-    public function removeCurlOpt($curlOpt)
-    {
-        if (!array_key_exists($curlOpt, $this->curlOptArray))
-            return null;
-
-        $val = $this->curlOptArray[$curlOpt];
-        unset($this->curlOptArray[$curlOpt]);
-        return $val;
-    }
-
-    /**
-     * @param array $opts
-     */
-    public function setCurlOptArray(array $opts)
-    {
-        $this->curlOptArray = $opts;
+        return $this->curlClient;
     }
 
     /**
      * @return array
      */
-    public function &getCurlOptArray()
+    public function getRequestHeaders()
     {
-        return $this->curlOptArray;
-    }
-
-    /**
-     * @param string $header
-     */
-    public function addHttpHeader($header)
-    {
-        $this->curlHttpHeaders[] = $header;
-    }
-
-    /**
-     * @return array
-     */
-    public function &getHttpHeaders()
-    {
-        return $this->curlHttpHeaders;
+        return $this->getClient()->getRequestHeaders();
     }
 
     /**
      * @param array $headers
+     * @return void
      */
-    public function setHttpHeaders(array $headers)
+    public function setRequestHeaders(array $headers)
     {
-        $this->curlHttpHeaders = $headers;
+        $this->getClient()->setRequestHeaders($headers);
+    }
+
+    /**
+     * @param string $header
+     * @return void
+     */
+    public function addRequestHeader($header)
+    {
+        $this->getClient()->addRequestHeaderString($header);
+    }
+
+    /**
+     * @param array $opts
+     * @return void
+     */
+    public function setCurlOpts(array $opts)
+    {
+        $this->getClient()->setCurlOpts($opts);
+    }
+
+    /**
+     * @return array
+     */
+    public function getCurlOpts()
+    {
+        return $this->getClient()->getCurlOpts();
+    }
+
+    /**
+     * @return void
+     */
+    public function resetCurlOpts()
+    {
+        $this->getClient()->resetCurlOpts();
+    }
+
+    /**
+     * @param array $requestHeaders
+     * @return void
+     */
+    public function setDefaultRequestHeaders(array $requestHeaders)
+    {
+        $this->defaultRequestHeaders = $requestHeaders;
+    }
+
+    /**
+     * @return array
+     */
+    public function getDefaultRequestHeaders()
+    {
+        return $this->defaultRequestHeaders;
     }
 }
