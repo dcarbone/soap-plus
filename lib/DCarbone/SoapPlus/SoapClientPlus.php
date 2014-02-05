@@ -426,5 +426,4 @@ class SoapClientPlus extends \SoapClient implements IOCurlContainer
     {
         $this->getClient()->resetCurlOpts();
     }
-
 }
