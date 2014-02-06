@@ -8,7 +8,7 @@
         "soap",
         "soapclient"
     ],
-    "homepage": "https://github.com/dcarbone/dom-plus",
+    "homepage": "https://github.com/dcarbone/soap-plus",
     "license": "MIT",
 
     "authors" : [
