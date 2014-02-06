@@ -1,7 +1,15 @@
 {
     "name" : "dcarbone/soap-plus",
     "type" : "library",
-    "description" : "More Better PHP Soap implementation",
+    "description" : "PHP SoapClient wrapper class",
+
+    "keywords": [
+        "php",
+        "soap",
+        "soapclient"
+    ],
+    "homepage": "https://github.com/dcarbone/dom-plus",
+    "license": "MIT",
 
     "authors" : [
         {
