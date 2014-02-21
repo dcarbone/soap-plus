@@ -2,16 +2,16 @@
 
 use DCarbone\CurlPlus\CurlPlusClient;
 use DCarbone\CurlPlus\Error\CurlErrorBase;
-use DCarbone\CurlPlus\IOCurlContainer;
+use DCarbone\CurlPlus\ICurlPlusContainer;
 
 /**
  * Class SoapClientPlus
  * @package DCarbone\SoapPlus
  */
-class SoapClientPlus extends \SoapClient implements IOCurlContainer
+class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
 {
     /** @var \DCarbone\CurlPlus\CurlPlusClient */
-    protected $curlClient;
+    protected $curlPlusClient;
 
     /** @var array */
     protected $options;
@@ -54,21 +54,25 @@ class SoapClientPlus extends \SoapClient implements IOCurlContainer
      */
     public function __construct($wsdl, array $options = array())
     {
-        $this->curlClient = new CurlPlusClient();
+        $this->curlPlusClient = new CurlPlusClient();
 
-        static::$wsdlCachePath = realpath(__DIR__.DIRECTORY_SEPARATOR.'WSDL');
+        $wsdlCachePath = realpath(__DIR__.DIRECTORY_SEPARATOR.'WSDL');
 
-        if (!is_writable(static::$wsdlCachePath))
+        if ($wsdlCachePath === false || !is_writable($wsdlCachePath))
         {
-            $created = mkdir(static::$wsdlCachePath);
+            $wsdlCachePath = realpath(__DIR__).DIRECTORY_SEPARATOR.'WSDL';
+
+            $created = mkdir($wsdlCachePath);
 
             if ($created === false)
                 throw new \Exception('DCarbone::SoapPlus - WSDL temp directory is not writable / creatable!');
 
-            $created = mkdir(static::$wsdlCachePath.'/Temp');
+            $created = mkdir($wsdlCachePath.DIRECTORY_SEPARATOR.'Temp');
             if ($created === false)
                 throw new \Exception('DCarbone::SoapPlus - WSDL temp directory is not writable / creatable!');
         }
+
+        self::$wsdlCachePath = $wsdlCachePath;
 
         $this->options = $options;
         $this->parseOptions();
@@ -175,12 +179,12 @@ class SoapClientPlus extends \SoapClient implements IOCurlContainer
         // Otherwise move on!
 
         // First, load the wsdl
-        $this->curlClient->setRequestUrl($wsdlURL);
-        $this->curlClient->setCurlOpts($this->curlOptArray);
-        $response = $this->curlClient->execute();
+        $this->curlPlusClient->setRequestUrl($wsdlURL);
+        $this->curlPlusClient->setCurlOpts($this->curlOptArray);
+        $response = $this->curlPlusClient->execute(true);
         // Check for error
         if ($response instanceof CurlErrorBase)
-            throw new \Exception('Error thrown while trying to retrieve WSDL file: "'.$response->getError().'"');
+            throw new \Exception('SoapClientPlus - Error thrown while trying to retrieve WSDL file: "'.$response->getError().'"');
 
         // If caching is enabled, go ahead and return the file path value
         if ($cache === true)
@@ -323,18 +327,18 @@ class SoapClientPlus extends \SoapClient implements IOCurlContainer
      */
     public function __doRequest($request, $location, $action, $version, $one_way = 0)
     {
-        $this->curlClient->setRequestUrl($location);
-        $this->curlClient->setCurlOpt(CURLOPT_POSTFIELDS, $request);
-        $this->curlClient->setCurlOpts($this->curlOptArray);
+        $this->curlPlusClient->setRequestUrl($location);
+        $this->curlPlusClient->setCurlOpt(CURLOPT_POSTFIELDS, $request);
+        $this->curlPlusClient->setCurlOpts($this->curlOptArray);
 
         // Add the header strings
         foreach($this->defaultRequestHeaders as $headerString)
         {
             $this->getClient()->addRequestHeaderString($headerString);
         }
-        $this->curlClient->addRequestHeaderString('SOAPAction: "'.$action.'"');
+        $this->curlPlusClient->addRequestHeaderString('SOAPAction: "'.$action.'"');
 
-        $ret = $this->curlClient->execute();
+        $ret = $this->curlPlusClient->execute();
         if ($ret instanceof CurlErrorBase)
             throw new \Exception('DCarbone\SoapClientPlus::__doRequest - CURL Error during call: "'. addslashes($ret->getError()).'", "'.addslashes($ret->getResponse()).'"');
 
@@ -363,7 +367,7 @@ class SoapClientPlus extends \SoapClient implements IOCurlContainer
      */
     public function &getClient()
     {
-        return $this->curlClient;
+        return $this->curlPlusClient;
     }
 
     /**
