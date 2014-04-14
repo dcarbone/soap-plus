@@ -44,6 +44,11 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
     /** @var string */
     protected static $wsdlCachePath;
 
+    /** @var array */
+    protected $debugQueries = array();
+    /** @var array */
+    protected $debugResults = array();
+
     /**
      * Constructor
      *
@@ -98,6 +103,9 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
 
         if (!isset($this->options['user_agent']))
             $this->soapOptions['user_agent'] = 'SoapClientPlus';
+
+        if (isset($this->soapOptions['debug']))
+            unset($this->soapOptions['debug']);
 
         if (isset($this->options['login']) && isset($this->options['password']))
         {
@@ -229,8 +237,8 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
     /**
      * For now this is the only way I'm aware of to get SoapClient to play nice.
      *
-     * @param $wsdlName
-     * @param $wsdlString
+     * @param string $wsdlName
+     * @param string $wsdlString
      * @return string
      */
     protected function createWSDLTempFile($wsdlName, $wsdlString)
@@ -239,6 +247,42 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
         fwrite($file, $wsdlString, strlen($wsdlString));
         fclose($file);
         return static::$wsdlCachePath.DIRECTORY_SEPARATOR.'Temp'.DIRECTORY_SEPARATOR.$wsdlName.'.xml';
+    }
+
+    /**
+     * @return bool
+     */
+    protected function isDebug()
+    {
+        if (!isset($this->options['debug']))
+            return false;
+
+        return (bool)$this->options['debug'];
+    }
+
+    /**
+     * @return array
+     */
+    public function getDebugQueries()
+    {
+        return $this->debugQueries;
+    }
+
+    /**
+     * @return array
+     */
+    public function getDebugResults()
+    {
+        return $this->debugResults;
+    }
+
+    /**
+     * @return void
+     */
+    public function resetDebugValue()
+    {
+        $this->debugQueries = array();
+        $this->debugResults = array();
     }
 
     /**
@@ -338,7 +382,14 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
         }
         $this->curlPlusClient->addRequestHeaderString('SOAPAction: "'.$action.'"');
 
+        if ($this->isDebug())
+            $this->debugQueries[] = array('headers' => $this->curlPlusClient->getRequestHeaders(), 'body' => $request);
+
         $ret = $this->curlPlusClient->execute();
+
+        if ($this->isDebug())
+            $this->debugResults[] = array('code' => $ret->getHttpCode(), 'response' => $ret->getResponse());
+
         if ($ret instanceof CurlErrorBase)
             throw new \Exception('DCarbone\SoapClientPlus::__doRequest - CURL Error during call: "'. addslashes($ret->getError()).'", "'.addslashes($ret->getResponse()).'"');
 
