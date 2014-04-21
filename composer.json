@@ -24,12 +24,12 @@
         "lib-openssl" : "*",
         "lib-libxml" : "*",
 
-        "dcarbone/curl-plus": "0.2.*"
+        "dcarbone/curl-plus": "0.3.*"
     },
 
     "autoload" : {
-        "psr-0" : {
-            "DCarbone\\SoapPlus\\" : "lib/"
+        "psr-4" : {
+            "DCarbone\\SoapPlus\\" : ""
         }
     }
 }
