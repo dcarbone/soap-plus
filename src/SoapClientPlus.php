@@ -383,12 +383,12 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
         $this->curlPlusClient->addRequestHeaderString('SOAPAction: "'.$action.'"');
 
         if ($this->isDebug())
-            $this->debugQueries[] = array('headers' => $this->curlPlusClient->getRequestHeaders(), 'body' => $request);
+            $this->debugQueries[] = array('headers' => $this->curlPlusClient->getRequestHeaders(), 'body' => (string)$request);
 
         $ret = $this->curlPlusClient->execute();
 
         if ($this->isDebug())
-            $this->debugResults[] = array('code' => $ret->getHttpCode(), 'response' => $ret->getResponse());
+            $this->debugResults[] = array('code' => $ret->getHttpCode(), 'response' => (string)$ret->getResponse());
 
         if ($ret instanceof CurlErrorBase)
             throw new \Exception('DCarbone\SoapClientPlus::__doRequest - CURL Error during call: "'. addslashes($ret->getError()).'", "'.addslashes($ret->getResponse()).'"');
