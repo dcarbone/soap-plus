@@ -350,7 +350,7 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
             $value = trim((string)$element);
 
             if (count($children) > 0)
-                $array[$sxe->getName()][$element->getName()]['any'] = reset($children)->saveXML();
+                $array[$sxe->getName()][$element->getName()]['any'] = $children[0]->saveXML();
             else
                 $array[$sxe->getName()][$element->getName()] = $value;
         }
