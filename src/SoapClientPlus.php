@@ -61,18 +61,18 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
     {
         $this->curlPlusClient = new CurlPlusClient();
 
-        $wsdlCachePath = realpath(__DIR__ . DIRECTORY_SEPARATOR . 'WSDL');
+        $wsdlCachePath = realpath(__DIR__.DIRECTORY_SEPARATOR.'WSDL');
 
         if ($wsdlCachePath === false || !is_writable($wsdlCachePath))
         {
-            $wsdlCachePath = realpath(__DIR__) . DIRECTORY_SEPARATOR . 'WSDL';
+            $wsdlCachePath = realpath(__DIR__).DIRECTORY_SEPARATOR.'WSDL';
 
             $created = mkdir($wsdlCachePath);
 
             if ($created === false)
                 throw new \Exception('DCarbone::SoapPlus - WSDL temp directory is not writable / creatable!');
 
-            $created = mkdir($wsdlCachePath . DIRECTORY_SEPARATOR . 'Temp');
+            $created = mkdir($wsdlCachePath.DIRECTORY_SEPARATOR.'Temp');
             if ($created === false)
                 throw new \Exception('DCarbone::SoapPlus - WSDL temp directory is not writable / creatable!');
         }
@@ -342,17 +342,44 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
             throw new \Exception('DCarbone\SoapClientPlus::createArgumentArrayFromXML - Error found while parsing ActionBody: "'.libxml_get_last_error()->message.'"');
 
         $array = array($function_name => array());
-        foreach($sxe->children() as $element)
-        {
-            /** @var $element \SimpleXMLElement */
+
+        /**
+         * @param \SimpleXMLElement $element
+         * @param array $array
+         */
+        $parseXml = function(\SimpleXMLElement $element, array &$array) use ($sxe, &$parseXml) {
             $children = $element->children();
             $attributes = $element->attributes();
             $value = trim((string)$element);
 
             if (count($children) > 0)
-                $array[$sxe->getName()][$element->getName()]['any'] = $children[0]->saveXML();
+            {
+                if ($element->getName() === 'any')
+                {
+                    $array[$element->getName()] = $children[0]->saveXML();
+                }
+                else
+                {
+                    if (!isset($array[$element->getName()]))
+                        $array[$element->getName()] = array();
+
+                    foreach($children as $child)
+                    {
+                        /** @var \SimpleXMLElement $child */
+                        $parseXml($child, $array[$element->getName()]);
+                    }
+                }
+            }
             else
-                $array[$sxe->getName()][$element->getName()] = $value;
+            {
+                $array[$element->getName()] = $value;
+            }
+        };
+
+        foreach($sxe->children() as $element)
+        {
+            /** @var $element \SimpleXMLElement */
+            $parseXml($element, $array[$sxe->getName()]);
         }
 
         return $array;
