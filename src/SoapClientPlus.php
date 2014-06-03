@@ -261,6 +261,22 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
     }
 
     /**
+     * @return void
+     */
+    public function enableDebug()
+    {
+        $this->options['debug'] = true;
+    }
+
+    /**
+     * @return void
+     */
+    public function disableDebug()
+    {
+        $this->options['debug'] = false;
+    }
+
+    /**
      * @return array
      */
     public function getDebugQueries()
