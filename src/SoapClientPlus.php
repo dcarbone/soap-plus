@@ -344,7 +344,12 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
     public function createArgumentArrayFromXML($arguments, $function_name)
     {
         try {
-            $sxe = @new \SimpleXMLElement(trim($arguments), LIBXML_COMPACT | LIBXML_PARSEHUGE | LIBXML_NOBLANKS);
+            if (defined('LIBXML_PARSEHUGE'))
+                $arg = LIBXML_COMPACT | LIBXML_NOBLANKS | LIBXML_PARSEHUGE;
+            else
+                $arg = LIBXML_COMPACT | LIBXML_NOBLANKS;
+
+            $sxe = @new \SimpleXMLElement(trim($arguments), $arg);
         }
         catch (\Exception $e)
         {
