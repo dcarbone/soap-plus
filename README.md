@@ -114,7 +114,7 @@ array (
     'rowLimit' => '150',
     'query' =>
     array (
-      'any' => '<Query xmlns=""><Where><And><Eq><FieldRef Name="Column1"/><Value Type="Integer">1</Value></Eq><And><Neq><FieldRef Name="Column3"/><Value Type="Text">value i don't want/Value></Neq><IsNotNull><FieldRef Name="Column3"/></IsNotNull></And></And></Where><OrderBy><FieldRef Name="Column1" Ascending="True"/><FieldRef Name="Column2" Ascending="True"/><FieldRef Name="Column3" Ascending="True"/></OrderBy></Query>',
+      'any' => '<Query xmlns=""><Where><And><Eq><FieldRef Name="Column1"/><Value Type="Integer">1</Value></Eq><And><Neq><FieldRef Name="Column3"/><Value Type="Text">value i don\'t want/Value></Neq><IsNotNull><FieldRef Name="Column3"/></IsNotNull></And></And></Where><OrderBy><FieldRef Name="Column1" Ascending="True"/><FieldRef Name="Column2" Ascending="True"/><FieldRef Name="Column3" Ascending="True"/></OrderBy></Query>',
     ),
     'viewFields' =>
     array (
