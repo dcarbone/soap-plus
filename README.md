@@ -36,7 +36,7 @@ This property is optional, and allows you to define a custom <a href="http://en.
 
 By setting `"debug" => true` in your configuration array, every query and result will be stored in an internally array that can
 be accessed via the methods `getDebugQueries()` and `getDebugResults()`. You may also enable/disable debugging post-construct with
-`enableDebug` and `disableDebug`.
+`enableDebug()` and `disableDebug()`.
 
 One word of caution on debugging.  SOAP results can often be quite large, meaning you could potentially have lots of memory
 being sucked up for the strings that are saved in the internal array. I would recommend NOT enabling this feature anywhere
