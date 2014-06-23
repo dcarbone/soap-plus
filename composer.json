@@ -24,7 +24,7 @@
         "lib-openssl" : "*",
         "lib-libxml" : "*",
 
-        "dcarbone/curl-plus": "0.3.*"
+        "dcarbone/curl-plus": "0.4.*"
     },
 
     "autoload" : {

@@ -1,7 +1,6 @@
 <?php namespace DCarbone\SoapPlus;
 
 use DCarbone\CurlPlus\CurlPlusClient;
-use DCarbone\CurlPlus\Error\CurlErrorBase;
 use DCarbone\CurlPlus\ICurlPlusContainer;
 
 /**
@@ -190,8 +189,9 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
         $this->curlPlusClient->setRequestUrl($wsdlURL);
         $this->curlPlusClient->setCurlOpts($this->curlOptArray);
         $response = $this->curlPlusClient->execute(true);
+
         // Check for error
-        if ($response instanceof CurlErrorBase)
+        if ($response->getHttpCode() != 200 || $response->getResponse() === false)
             throw new \Exception('SoapClientPlus - Error thrown while trying to retrieve WSDL file: "'.$response->getError().'"');
 
         // If caching is enabled, go ahead and return the file path value
@@ -356,7 +356,7 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
             if (libxml_get_last_error() !== false)
                 throw new \Exception('DCarbone\SoapClientPlus::createArgumentArrayFromXML - Error found while parsing ActionBody: "'.libxml_get_last_error()->message.'"');
             else
-                throw new \Exception('DCarbone\SoapClientPlus::createArgumentArrayFromXML - Error found while parsing ActionBody: Unknown');
+                throw new \Exception('DCarbone\SoapClientPlus::createArgumentArrayFromXML - Error found while parsing ActionBody: "'.$e->getMessage().'"');
         }
 
         if (!($sxe instanceof \SimpleXMLElement))
@@ -438,7 +438,7 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
         if ($this->isDebug())
             $this->debugResults[] = array('code' => $ret->getHttpCode(), 'response' => (string)$ret->getResponse());
 
-        if ($ret instanceof CurlErrorBase)
+        if ($ret->getResponse() == false || $ret->getHttpCode() != 200)
             throw new \Exception('DCarbone\SoapClientPlus::__doRequest - CURL Error during call: "'. addslashes($ret->getError()).'", "'.addslashes($ret->getResponse()).'"');
 
         return $ret->getResponse();
