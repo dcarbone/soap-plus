@@ -429,10 +429,7 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
             $this->getClient()->addRequestHeaderString($headerString);
         }
         $this->curlPlusClient->addRequestHeaderString('SOAPAction: "'.$action.'"');
-
-        if ($this->isDebug())
-            $this->debugQueries[] = array('headers' => $this->curlPlusClient->getRequestHeaders(), 'body' => (string)$request);
-
+        
         $ret = $this->curlPlusClient->execute();
 
         if ($this->isDebug())
