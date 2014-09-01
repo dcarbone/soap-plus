@@ -60,23 +60,26 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
     {
         $this->curlPlusClient = new CurlPlusClient();
 
-        $wsdlCachePath = realpath(__DIR__.DIRECTORY_SEPARATOR.'WSDL');
-
-        if ($wsdlCachePath === false || !is_writable($wsdlCachePath))
+        if (!isset(self::$wsdlCachePath))
         {
-            $wsdlCachePath = realpath(__DIR__).DIRECTORY_SEPARATOR.'WSDL';
+            $wsdlCachePath = realpath(__DIR__.DIRECTORY_SEPARATOR.'WSDL');
 
-            $created = mkdir($wsdlCachePath);
+            if ($wsdlCachePath === false || !is_writable($wsdlCachePath))
+            {
+                $wsdlCachePath = realpath(__DIR__).DIRECTORY_SEPARATOR.'WSDL';
 
-            if ($created === false)
-                throw new \Exception('DCarbone::SoapPlus - WSDL temp directory is not writable / creatable!');
+                $created = mkdir($wsdlCachePath);
 
-            $created = mkdir($wsdlCachePath.DIRECTORY_SEPARATOR.'Temp');
-            if ($created === false)
-                throw new \Exception('DCarbone::SoapPlus - WSDL temp directory is not writable / creatable!');
+                if ($created === false)
+                    throw new \Exception('DCarbone::SoapPlus - WSDL temp directory is not writable / creatable!');
+
+                $created = mkdir($wsdlCachePath.DIRECTORY_SEPARATOR.'Temp');
+                if ($created === false)
+                    throw new \Exception('DCarbone::SoapPlus - WSDL temp directory is not writable / creatable!');
+            }
+
+            self::$wsdlCachePath = $wsdlCachePath;
         }
-
-        self::$wsdlCachePath = $wsdlCachePath;
 
         $this->options = $options;
         $this->parseOptions();
@@ -155,7 +158,10 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
         $soapCache = ini_get('soap.wsdl_cache_enabled');
 
         // Get the passed in cache parameter, if there is one.
-        $optCache = isset($this->options['cache_wsdl']) ? $this->options['cache_wsdl'] : null;
+        if (isset($this->options['cache_wsdl']))
+            $optCache = $this->options['cache_wsd'];
+        else
+            $optCache = null;
 
         // By default defer to the global cache value
         $cache = $soapCache != '0' ? true : false;
@@ -419,7 +425,7 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
      */
     public function __doRequest($request, $location, $action, $version, $one_way = 0)
     {
-        $this->curlPlusClient->setRequestUrl($location);
+        $this->curlPlusClient->initialize($location, true);
         $this->curlPlusClient->setCurlOpt(CURLOPT_POSTFIELDS, (string)$request);
         $this->curlPlusClient->setCurlOpts($this->curlOptArray);
 
@@ -544,6 +550,6 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
      */
     public function resetCurlOpts()
     {
-        $this->getClient()->resetCurlOpts();
+        $this->getClient()->reset();
     }
 }
