@@ -66,7 +66,7 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
 
             if ($wsdlCachePath === false || !is_writable($wsdlCachePath))
             {
-                $wsdlCachePath = realpath(__DIR__).DIRECTORY_SEPARATOR.'WSDL';
+                $wsdlCachePath = sys_get_temp_dir().DIRECTORY_SEPARATOR.'WSDL';
 
                 $created = mkdir($wsdlCachePath);
 
