@@ -68,14 +68,14 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
             {
                 $wsdlCachePath = sys_get_temp_dir().DIRECTORY_SEPARATOR.'WSDL';
 
-                $created = mkdir($wsdlCachePath);
+                $created = @mkdir($wsdlCachePath);
 
-                if ($created === false)
-                    throw new \Exception('DCarbone::SoapPlus - WSDL temp directory is not writable / creatable!');
+                if ($created === false && !is_writable($wsdlCachePath))
+                    throw new \Exception('DCarbone::SoapPlus - WSDL temp directory is not creatable or writable !');
 
-                $created = mkdir($wsdlCachePath.DIRECTORY_SEPARATOR.'Temp');
-                if ($created === false)
-                    throw new \Exception('DCarbone::SoapPlus - WSDL temp directory is not writable / creatable!');
+                $created = @mkdir($wsdlCachePath.DIRECTORY_SEPARATOR.'Temp');
+                if ($created === false && !is_writable($wsdlCachePath.DIRECTORY_SEPARATOR.'Temp'))
+                    throw new \Exception('DCarbone::SoapPlus - WSDL temp directory is not creatable or writable !');
             }
 
             self::$wsdlCachePath = $wsdlCachePath;
