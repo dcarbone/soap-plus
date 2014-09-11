@@ -192,7 +192,7 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
         // Otherwise move on!
 
         // First, load the wsdl
-        $this->curlPlusClient->setRequestUrl($wsdlURL);
+        $this->curlPlusClient->initialize($wsdlURL);
         $this->curlPlusClient->setCurlOpts($this->curlOptArray);
         $response = $this->curlPlusClient->execute(true);
 
