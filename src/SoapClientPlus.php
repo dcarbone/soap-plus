@@ -9,6 +9,9 @@ use DCarbone\CurlPlus\ICurlPlusContainer;
  */
 class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
 {
+    /** @var string */
+    public static $wsdlCachePath;
+
     /** @var \DCarbone\CurlPlus\CurlPlusClient */
     protected $curlPlusClient;
 
@@ -17,6 +20,9 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
 
     /** @var array */
     protected $soapOptions;
+
+    protected $wsdlTmpFileName;
+    protected $clearTmpFileOnDestruct = false;
 
     /** @var array */
     protected $curlOptArray = array(
@@ -40,9 +46,6 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
     /** @var string */
     protected $password = null;
 
-    /** @var string */
-    protected static $wsdlCachePath;
-
     /** @var array */
     protected $debugQueries = array();
     /** @var array */
@@ -53,7 +56,7 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
      *
      * @param string $wsdl
      * @param array $options
-     * @throws \Exception
+     * @throws \RuntimeException
      * @return \DCarbone\SoapPlus\SoapClientPlus
      */
     public function __construct($wsdl, array $options = array())
@@ -62,24 +65,36 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
 
         if (!isset(self::$wsdlCachePath))
         {
-            $wsdlCachePath = realpath(__DIR__.DIRECTORY_SEPARATOR.'WSDL');
-
-            if ($wsdlCachePath === false || !is_writable($wsdlCachePath))
+            if (isset($options['wsdl_cache_path']))
             {
-                $wsdlCachePath = sys_get_temp_dir().DIRECTORY_SEPARATOR.'WSDL';
+                $wsdlCachePath = $options['wsdl_cache_path'];
 
-                $created = @mkdir($wsdlCachePath);
-
-                if ($created === false && !is_writable($wsdlCachePath))
-                    throw new \Exception('DCarbone::SoapPlus - WSDL temp directory is not creatable or writable !');
-
-                $created = @mkdir($wsdlCachePath.DIRECTORY_SEPARATOR.'Temp');
-                if ($created === false && !is_writable($wsdlCachePath.DIRECTORY_SEPARATOR.'Temp'))
-                    throw new \Exception('DCarbone::SoapPlus - WSDL temp directory is not creatable or writable !');
+                unset($options['wsdl_cache_path']);
+            }
+            else
+            {
+                $wsdlCachePath = sys_get_temp_dir();
             }
 
-            self::$wsdlCachePath = $wsdlCachePath;
+            $realpath = realpath($wsdlCachePath);
+
+            if ($realpath === false)
+            {
+                $created = mkdir($wsdlCachePath);
+
+                if ($created === false)
+                    throw new \RuntimeException(get_class($this).'::__construct - Could not find / create WSDL cache directory!');
+            }
+
+            self::$wsdlCachePath = $realpath;
         }
+
+        $lastChr = substr(self::$wsdlCachePath, -1);
+        if ($lastChr !== '\\' && $lastChr !== '/')
+            self::$wsdlCachePath .= DIRECTORY_SEPARATOR;
+
+        if (is_writable(self::$wsdlCachePath) !== true)
+            throw new \RuntimeException(get_class($this).'::__construct - WSDL cache directory is not writable!');
 
         $this->options = $options;
         $this->parseOptions();
@@ -88,6 +103,15 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
             $wsdl = $this->loadWSDL($wsdl);
 
         parent::SoapClient($wsdl, $this->soapOptions);
+    }
+
+    /**
+     * Destructor
+     */
+    public function __destruct()
+    {
+        if ($this->clearTmpFileOnDestruct && file_exists(self::$wsdlCachePath.$this->wsdlTmpFileName))
+            @unlink(self::$wsdlCachePath.$this->wsdlTmpFileName);
     }
 
     /**
@@ -152,19 +176,20 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
     protected function loadWSDL($wsdlURL)
     {
         // Get a SHA1 hash of the full WSDL url to use as the cache filename
-        $wsdlName = sha1(strtolower($wsdlURL));
+        $this->wsdlTmpFileName = sha1(strtolower($wsdlURL)).'.xml';
 
         // Get the runtime soap cache configuration
         $soapCache = ini_get('soap.wsdl_cache_enabled');
 
         // Get the passed in cache parameter, if there is one.
         if (isset($this->options['cache_wsdl']))
-            $optCache = $this->options['cache_wsd'];
+            $optCache = $this->options['cache_wsdl'];
         else
             $optCache = null;
 
         // By default defer to the global cache value
         $cache = $soapCache != '0' ? true : false;
+        $this->clearTmpFileOnDestruct = !$cache;
 
         // If they specifically pass in a cache value, use it.
         if ($optCache !== null)
@@ -172,9 +197,9 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
             switch($optCache)
             {
                 case WSDL_CACHE_MEMORY :
-                    throw new \Exception('WSDL_CACHE_MEMORY is not yet supported by SoapPlus');
+                    throw new \RuntimeException('WSDL_CACHE_MEMORY is not yet supported by SoapClientPlus');
                 case WSDL_CACHE_BOTH :
-                    throw new \Exception('WSDL_CACHE_BOTH is not yet supported by SoapPlus');
+                    throw new \RuntimeException('WSDL_CACHE_BOTH is not yet supported by SoapClientPlus');
 
                 case WSDL_CACHE_DISK : $cache = true; break;
                 case WSDL_CACHE_NONE : $cache = false; break;
@@ -184,7 +209,7 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
         // If cache === true, attempt to load from cache.
         if ($cache === true)
         {
-            $path = $this->loadWSDLFromCache($wsdlName);
+            $path = $this->loadWSDLFromCache();
             if ($path !== null)
                 return $path;
         }
@@ -200,24 +225,19 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
         if ($response->getHttpCode() != 200 || $response->getResponse() === false)
             throw new \Exception('SoapClientPlus - Error thrown while trying to retrieve WSDL file: "'.$response->getError().'"');
 
-        // If caching is enabled, go ahead and return the file path value
-        if ($cache === true)
-            return $this->createWSDLCache($wsdlName, trim((string)$response));
-
-        // Else create a "temp" file and return the file path to it.
-        $path = $this->createWSDLTempFile($wsdlName, trim((string)$response));
+        // Create a local copy of WSDL file and return the file path to it.
+        $path = $this->createWSDLCache(trim((string)$response));
         return $path;
     }
 
     /**
      * Try to return the WSDL file path string
      *
-     * @param string $wsdlName
      * @return null|string
      */
-    protected function loadWSDLFromCache($wsdlName)
+    protected function loadWSDLFromCache()
     {
-        $filePath = static::$wsdlCachePath.DIRECTORY_SEPARATOR.$wsdlName.'.xml';
+        $filePath = static::$wsdlCachePath.$this->wsdlTmpFileName;
 
         if (file_exists($filePath))
             return $filePath;
@@ -228,31 +248,26 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
     /**
      * Create the WSDL cache file
      *
-     * @param string $wsdlName
      * @param string $wsdlString
      * @return string
      */
-    protected function createWSDLCache($wsdlName, $wsdlString)
+    protected function createWSDLCache($wsdlString)
     {
-        $file = fopen(static::$wsdlCachePath.DIRECTORY_SEPARATOR.$wsdlName.'.xml', 'w+');
+        $file = fopen(static::$wsdlCachePath.$this->wsdlTmpFileName, 'w+');
         fwrite($file, $wsdlString, strlen($wsdlString));
         fclose($file);
-        return static::$wsdlCachePath.DIRECTORY_SEPARATOR.$wsdlName.'.xml';
+        return static::$wsdlCachePath.$this->wsdlTmpFileName;
     }
 
     /**
-     * For now this is the only way I'm aware of to get SoapClient to play nice.
-     *
-     * @param string $wsdlName
-     * @param string $wsdlString
-     * @return string
+     * @return string|null
      */
-    protected function createWSDLTempFile($wsdlName, $wsdlString)
+    public function getWSDLTmpFileName()
     {
-        $file = fopen(static::$wsdlCachePath.DIRECTORY_SEPARATOR.'Temp'.DIRECTORY_SEPARATOR.$wsdlName.'.xml', 'w+');
-        fwrite($file, $wsdlString, strlen($wsdlString));
-        fclose($file);
-        return static::$wsdlCachePath.DIRECTORY_SEPARATOR.'Temp'.DIRECTORY_SEPARATOR.$wsdlName.'.xml';
+        if (isset($this->wsdlTmpFileName))
+            return $this->wsdlTmpFileName;
+
+        return null;
     }
 
     /**
@@ -360,56 +375,77 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
         catch (\Exception $e)
         {
             if (libxml_get_last_error() !== false)
-                throw new \Exception('DCarbone\SoapClientPlus::createArgumentArrayFromXML - Error found while parsing ActionBody: "'.libxml_get_last_error()->message.'"');
+                throw new \RuntimeException(
+                    get_class($this).'::createArgumentArrayFromXML - Error found while parsing ActionBody: "'.
+                    libxml_get_last_error()->message.'"', $e->getCode(), $e);
             else
-                throw new \Exception('DCarbone\SoapClientPlus::createArgumentArrayFromXML - Error found while parsing ActionBody: "'.$e->getMessage().'"');
+                throw new \RuntimeException(
+                    get_class($this).'::createArgumentArrayFromXML - Error found while parsing ActionBody: "'.
+                    $e->getMessage().'"', $e->getCode(), $e);
         }
 
         if (!($sxe instanceof \SimpleXMLElement))
-            throw new \Exception('DCarbone\SoapClientPlus::createArgumentArrayFromXML - Error found while parsing ActionBody: "'.libxml_get_last_error()->message.'"');
-
-        $array = array($function_name => array());
-
-        /**
-         * @param \SimpleXMLElement $element
-         * @param array $array
-         */
-        $parseXml = function(\SimpleXMLElement $element, array &$array) use ($sxe, &$parseXml) {
-            $children = $element->children();
-            $attributes = $element->attributes();
-            $value = trim((string)$element);
-
-            if (count($children) > 0)
-            {
-                if ($element->getName() === 'any')
-                {
-                    $array[$element->getName()] = $children[0]->saveXML();
-                }
-                else
-                {
-                    if (!isset($array[$element->getName()]))
-                        $array[$element->getName()] = array();
-
-                    foreach($children as $child)
-                    {
-                        /** @var \SimpleXMLElement $child */
-                        $parseXml($child, $array[$element->getName()]);
-                    }
-                }
-            }
+        {
+            if (libxml_get_last_error() !== false)
+                throw new \RuntimeException(
+                    get_class($this).'::createArgumentArrayFromXML - Error found while parsing ActionBody: "'.
+                    libxml_get_last_error()->message.'"');
             else
-            {
-                $array[$element->getName()] = $value;
-            }
-        };
+                throw new \RuntimeException(
+                    get_class($this).'::createArgumentArrayFromXML - Encountered unknown error while parsing ActionBody.');
+        }
+
+        $name = $sxe->getName();
+        $array = array($function_name => array());
 
         foreach($sxe->children() as $element)
         {
             /** @var $element \SimpleXMLElement */
-            $parseXml($element, $array[$sxe->getName()]);
+            $this->parseXML($element, $array[$name]);
         }
 
+        unset($sxe);
+
         return $array;
+    }
+
+    /**
+     * @param \SimpleXMLElement $element
+     * @param array $array
+     * @return void
+     */
+    protected function parseXML(\SimpleXMLElement $element, array &$array)
+    {
+        /** @var array $children */
+        $children = $element->children();
+//        $attributes = $element->attributes();
+        $elementValue = trim((string)$element);
+        $elementName = $element->getName();
+
+        if (count($children) > 0)
+        {
+            if ($elementName === 'any')
+            {
+                /** @var \SimpleXMLElement $child */
+                $child = $children[0];
+                $array[$elementName] = $child->saveXML();
+            }
+            else
+            {
+                if (!isset($array[$elementName]))
+                    $array[$elementName] = array();
+
+                foreach($children as $child)
+                {
+                    /** @var \SimpleXMLElement $child */
+                    $this->parseXML($child, $array[$elementName]);
+                }
+            }
+        }
+        else
+        {
+            $array[$elementName] = $elementValue;
+        }
     }
 
     /**
@@ -493,63 +529,81 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
 
     /**
      * @param array $headers
-     * @return void
+     * @return $this
      */
     public function setRequestHeaders(array $headers)
     {
         $this->getClient()->setRequestHeaders($headers);
+        return $this;
     }
 
     /**
      * @param string $header
-     * @return void
+     * @return $this
      */
     public function addRequestHeaderString($header)
     {
         $this->getClient()->addRequestHeaderString($header);
+        return $this;
     }
 
     /**
      * @param int $opt
      * @param mixed $value
-     * @return void
+     * @return $this
      */
     public function setCurlOpt($opt, $value)
     {
         $this->getClient()->setCurlOpt($opt, $value);
+        return $this;
     }
 
     /**
      * @param int $opt
-     * @return void
+     * @return $this
      */
     public function removeCurlOpt($opt)
     {
         $this->getClient()->removeCurlOpt($opt);
+        return $this;
     }
 
     /**
      * @param array $opts
-     * @return void
+     * @return $this
      */
     public function setCurlOpts(array $opts)
     {
         $this->getClient()->setCurlOpts($opts);
+        return $this;
     }
 
     /**
+     * @param bool $humanReadable
      * @return array
      */
-    public function getCurlOpts()
+    public function getCurlOpts($humanReadable = false)
     {
-        return $this->getClient()->getCurlOpts();
+        return $this->getClient()->getCurlOpts($humanReadable);
     }
 
     /**
-     * @return void
+     * @return $this
      */
     public function resetCurlOpts()
     {
         $this->getClient()->reset();
+        return $this;
+    }
+
+    /**
+     * Reset to new state
+     *
+     * @return ICurlPlusContainer
+     */
+    public function reset()
+    {
+        $this->getClient()->reset();
+        return $this;
     }
 }

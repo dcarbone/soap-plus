@@ -19,16 +19,15 @@
     ],
 
     "require" : {
-        "php" : ">=5.3.3",
+        "php" : "~5.3.3",
         "lib-curl" : "*",
         "lib-libxml" : "*",
         "ext-soap" : "*",
-
-        "dcarbone/curl-plus": "0.5.*"
+        "dcarbone/curl-plus": "0.6.*"
     },
 
     "require-dev" : {
-        "phpunit/phpunit": "4.1.*"
+        "phpunit/phpunit": "~4.1"
     },
 
     "autoload" : {

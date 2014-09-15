@@ -42,6 +42,11 @@ One word of caution on debugging.  SOAP results can often be quite large, meanin
 being sucked up for the strings that are saved in the internal array. I would recommend NOT enabling this feature anywhere
 outside of a dev / local dev environment.  I have also provided a `resetDebugValue()` method which will empty the arrays.
 
+**wsdl_cache_path**
+
+This option will allow you to specify the directory in which the WSDL cache files will be generated.  If no value is passed
+for this option, [sys_get_temp_dir](http://php.net/manual/en/function.sys-get-temp-dir.php) value is used.
+
 ## Querying
 
 The typical mechanism by which PHP's SoapClient expects results is for them to be in an array.  Coming from the SharePoint world, where most
