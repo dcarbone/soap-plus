@@ -17,11 +17,6 @@
         <exclude>./tests/misc</exclude>
     </testsuite>
 
-    <testsuite name="FixedCollectionPlus">
-        <directory>./tests/FixedCollectionPlus</directory>
-        <exclude>./tests/misc</exclude>
-    </testsuite>
-
     <filter>
         <whitelist addUncoveredFilesFromWhitelist="true">
             <directory suffix=".php">./src</directory>

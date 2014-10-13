@@ -7,6 +7,7 @@ exit;
  */
 class SoapClientTest extends \PHPUnit_Framework_TestCase
 {
+    /** @var string */
     public static $weatherWSDL = 'http://wsf.cdyne.com/WeatherWS/Weather.asmx?WSDL';
 
     /**
