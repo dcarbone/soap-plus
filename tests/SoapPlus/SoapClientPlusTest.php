@@ -1,11 +1,11 @@
 <?php
 
 require __DIR__.'/../misc/cleanup.php';
-exit;
+
 /**
  * Class SoapClientTest
  */
-class SoapClientTest extends \PHPUnit_Framework_TestCase
+class SoapClientPlusTest extends \PHPUnit_Framework_TestCase
 {
     /** @var string */
     public static $weatherWSDL = 'http://wsf.cdyne.com/WeatherWS/Weather.asmx?WSDL';
