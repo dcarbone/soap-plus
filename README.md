@@ -6,7 +6,7 @@ Build status:
 - 0.7.1: [![Build Status](https://travis-ci.org/dcarbone/soap-plus.svg?tag=0.7.1)](https://travis-ci.org/dcarbone/soap-plus)
 
 In a nutshell, this class replaces the internal query mechanism used by PHP's <a href="http://www.php.net/manual/en/class.soapclient.php">SoapClient</a> class.
-The main reason for this wrapper was enable consumption of NTLM-authenticated SharePoint SOAP services in a PHP application.
+The main reason for this wrapper is to enable consumption of NTLM-authenticated SharePoint SOAP services in a PHP application.
 This is not a data-mapper, it simply returns data as the normal SoapClient would, but all of the internal querying
 is handled by the PHP CURL library.
 
