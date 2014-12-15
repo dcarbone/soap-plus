@@ -80,7 +80,7 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
     public function __construct($wsdl, array $options = array())
     {
         $this->curlPlusClient = new CurlPlusClient();
-        $this->options = $options;
+        $this->_options = $options;
         $this->_wsdlCachePath = static::setupWSDLCachePath($options);
         $this->curlOptArray = static::createCurlOptArray($options);
         $this->_soapOptions = static::createSoapOptionArray($options);

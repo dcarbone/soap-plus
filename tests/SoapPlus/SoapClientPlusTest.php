@@ -161,4 +161,67 @@ XML;
         $this->assertInternalType('object', $response);
         $this->assertObjectHasAttribute('GetCityForecastByZIPResult', $response);
     }
+
+    /**
+     * @covers \DCarbone\SoapPlus\SoapClientPlus::__construct
+     * @covers \DCarbone\SoapPlus\SoapClientPlus::createCurlOptArray
+     * @covers \DCarbone\SoapPlus\SoapClientPlus::createSoapOptionArray
+     * @uses \DCarbone\SoapPlus\SoapClientPlus
+     * @return \DCarbone\SoapPlus\SoapClientPlus
+     */
+    public function testCanConstructSoapClientPlusWithValidAuthCredentials()
+    {
+        $soapClient = new \DCarbone\SoapPlus\SoapClientPlus(self::$weatherWSDL, array(
+            'wsdl_cache_path' => __DIR__.'/../misc/wsdl-cache',
+            'login' => 'my_login',
+            'password' => 'my_password',
+            'auth_type' => 'ntlm',
+            'debug' => true
+        ));
+
+        $this->assertInstanceOf('\\DCarbone\\SoapPlus\\SoapClientPlus', $soapClient);
+
+        return $soapClient;
+    }
+
+    /**
+     * @covers \DCarbone\SoapPlus\SoapClientPlus::__construct
+     * @covers \DCarbone\SoapPlus\SoapClientPlus::createCurlOptArray
+     * @uses \DCarbone\SoapPlus\SoapClientPlus
+     * @expectedException \InvalidArgumentException
+     */
+    public function testExceptionThrownWhenInvalidAuthTypeSpecified()
+    {
+        $soapClient = new \DCarbone\SoapPlus\SoapClientPlus(self::$weatherWSDL, array(
+            'wsdl_cache_path' => __DIR__.'/../misc/wsdl-cache',
+            'login' => 'my_login',
+            'password' => 'my_password',
+            'auth_type' => 'sandwiches',
+        ));
+    }
+
+    /**
+     * @covers \DCarbone\SoapPlus\SoapClientPlus::__get
+     * @covers \DCarbone\SoapPlus\SoapClientPlus::createSoapOptionArray
+     * @uses \DCarbone\SoapPlus\SoapClientPlus
+     * @depends testCanConstructSoapClientPlusWithValidAuthCredentials
+     * @param \DCarbone\SoapPlus\SoapClientPlus $soapClient
+     */
+    public function testNonSoapOptionsProperlyRemoved(\DCarbone\SoapPlus\SoapClientPlus $soapClient)
+    {
+        $options = $soapClient->options;
+        $soapOptions = $soapClient->soapOptions;
+
+        $this->assertArrayHasKey('login', $options);
+        $this->assertArrayNotHasKey('login', $soapOptions);
+
+        $this->assertArrayHasKey('password', $options);
+        $this->assertArrayNotHasKey('password', $soapOptions);
+
+        $this->assertArrayHasKey('wsdl_cache_path', $options);
+        $this->assertArrayNotHasKey('wsdl_cache_path', $soapOptions);
+
+        $this->assertArrayHasKey('auth_type', $options);
+        $this->assertArrayNotHasKey('auth_type', $soapOptions);
+    }
 }
