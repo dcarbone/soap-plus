@@ -51,10 +51,10 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
 
     /** @var array */
     protected $defaultRequestHeaders = array(
-        'Content-type: text/xml;charset="utf-8"',
-        'Accept: text/xml',
-        'Cache-Control: no-cache',
-        'Pragma: no-cache',
+        'Content-type' => 'text/xml;charset="utf-8"',
+        'Accept' => 'text/xml',
+        'Cache-Control' => 'no-cache',
+        'Pragma' => 'no-cache',
     );
 
     /**
@@ -240,12 +240,21 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
     /**
      * @return bool
      */
-    protected function isDebug()
+    public function debugEnabled()
     {
         if (!isset($this->_options['debug']))
             return false;
 
         return (bool)$this->_options['debug'];
+    }
+
+    /**
+     * @deprecated Deprecated since 0.8.  Use debugEnabled instead
+     * @return bool
+     */
+    protected function isDebug()
+    {
+        return $this->debugEnabled();
     }
 
     /**
@@ -441,15 +450,15 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
         $this->curlPlusClient->setCurlOpts($this->curlOptArray);
 
         // Add the header strings
-        foreach($this->defaultRequestHeaders as $headerString)
+        foreach($this->defaultRequestHeaders as $k=>$v)
         {
-            $this->getClient()->addRequestHeaderString($headerString);
+            $this->getCurlClient()->setRequestHeader($k, $v);
         }
-        $this->curlPlusClient->addRequestHeaderString('SOAPAction: "'.$action.'"');
+        $this->curlPlusClient->setRequestHeader('SOAPAction', $action);
         
         $ret = $this->curlPlusClient->execute();
 
-        if ($this->isDebug())
+        if ($this->debugEnabled())
         {
             $this->_debugQueries[] = array(
                 'headers' => $ret->getRequestHeaders(),
@@ -475,7 +484,21 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
      */
     public function setDefaultRequestHeaders(array $requestHeaders)
     {
-        $this->defaultRequestHeaders = $requestHeaders;
+        // For backwards compatibility sakes.
+        $key = key($requestHeaders);
+        if (is_numeric($key))
+        {
+            $this->defaultRequestHeaders = array();
+            foreach($requestHeaders as $header)
+            {
+                $exp = explode(':', $requestHeaders, 2);
+                $this->defaultRequestHeaders[$exp[0]] = $exp[1];
+            }
+        }
+        else
+        {
+            $this->defaultRequestHeaders = $requestHeaders;
+        }
     }
 
     /**
@@ -489,6 +512,15 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
     /**
      * @return CurlPlusClient
      */
+    public function getCurlClient()
+    {
+        return $this->curlPlusClient;
+    }
+
+    /**
+     * @deprecated This has been deprecated as of dcarbone/curl-plus 1.0.  Use getCurlClient instead.
+     * @return CurlPlusClient
+     */
     public function &getClient()
     {
         return $this->curlPlusClient;
@@ -499,7 +531,7 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
      */
     public function getRequestHeaders()
     {
-        return $this->getClient()->getRequestHeaders();
+        return $this->getCurlClient()->getRequestHeaders();
     }
 
     /**
@@ -508,18 +540,31 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
      */
     public function setRequestHeaders(array $headers)
     {
-        $this->getClient()->setRequestHeaders($headers);
+        $this->getCurlClient()->setRequestHeaders($headers);
         return $this;
     }
 
     /**
+     * @param string $name
+     * @param string $value
+     * @return $this
+     */
+    public function setRequestHeader($name, $value)
+    {
+        $this->getCurlClient()->setRequestHeader($name, $value);
+        return $this;
+    }
+
+    /**
+     * @deprecated This method has been deprecated in favor of the setRequestHeader method
+     *
      * @param string $header
      * @return $this
      */
     public function addRequestHeaderString($header)
     {
-        $this->getClient()->addRequestHeaderString($header);
-        return $this;
+        $exp = explode(':', $header, 2);
+        return $this->setRequestHeader($exp[0], $exp[1]);
     }
 
     /**
@@ -529,7 +574,7 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
      */
     public function setCurlOpt($opt, $value)
     {
-        $this->getClient()->setCurlOpt($opt, $value);
+        $this->getCurlClient()->setCurlOpt($opt, $value);
         return $this;
     }
 
@@ -539,7 +584,7 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
      */
     public function removeCurlOpt($opt)
     {
-        $this->getClient()->removeCurlOpt($opt);
+        $this->getCurlClient()->removeCurlOpt($opt);
         return $this;
     }
 
@@ -549,7 +594,7 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
      */
     public function setCurlOpts(array $opts)
     {
-        $this->getClient()->setCurlOpts($opts);
+        $this->getCurlClient()->setCurlOpts($opts);
         return $this;
     }
 
@@ -559,7 +604,7 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
      */
     public function getCurlOpts($humanReadable = false)
     {
-        return $this->getClient()->getCurlOpts($humanReadable);
+        return $this->getCurlClient()->getCurlOpts($humanReadable);
     }
 
     /**
@@ -567,7 +612,7 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
      */
     public function resetCurlOpts()
     {
-        $this->getClient()->reset();
+        $this->getCurlClient()->reset();
         return $this;
     }
 
@@ -578,7 +623,7 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
      */
     public function reset()
     {
-        $this->getClient()->reset();
+        $this->getCurlClient()->reset();
         return $this;
     }
 

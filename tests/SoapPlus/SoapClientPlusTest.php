@@ -224,4 +224,103 @@ XML;
         $this->assertArrayHasKey('auth_type', $options);
         $this->assertArrayNotHasKey('auth_type', $soapOptions);
     }
+
+    /**
+     * @covers \DCarbone\SoapPlus\SoapClientPlus::loadWSDL
+     * @expectedException \RuntimeException
+     */
+    public function testExceptionThrownWhenAttemptingToSetWSDLCacheMemory()
+    {
+        $soapClient = new \DCarbone\SoapPlus\SoapClientPlus(self::$weatherWSDL, array(
+            'cache_wsdl' => WSDL_CACHE_MEMORY,
+        ));
+    }
+
+    /**
+     * @covers \DCarbone\SoapPlus\SoapClientPlus::loadWSDL
+     * @expectedException \RuntimeException
+     */
+    public function testExceptionThrownWhenAttemptingToSetWSDLCacheBoth()
+    {
+        $soapClient = new \DCarbone\SoapPlus\SoapClientPlus(self::$weatherWSDL, array(
+            'cache_wsdl' => WSDL_CACHE_BOTH,
+        ));
+    }
+
+    /**
+     * @covers \DCarbone\SoapPlus\SoapClientPlus::debugEnabled
+     */
+    public function testDebugDisabledByDefault()
+    {
+        $soapClient = new \DCarbone\SoapPlus\SoapClientPlus(self::$weatherWSDL);
+
+        $this->assertFalse($soapClient->debugEnabled());
+
+        return $soapClient;
+    }
+
+    /**
+     * @covers \DCarbone\SoapPlus\SoapClientPlus::enableDebug
+     * @covers \DCarbone\SoapPlus\SoapClientPlus::debugEnabled
+     * @depends testDebugDisabledByDefault
+     * @param \DCarbone\SoapPlus\SoapClientPlus $soapClient
+     */
+    public function testCanEnableDebugPostConstruct(\DCarbone\SoapPlus\SoapClientPlus $soapClient)
+    {
+        $soapClient->enableDebug();
+
+        $this->assertTrue($soapClient->debugEnabled());
+    }
+
+    /**
+     * @covers \DCarbone\SoapPlus\SoapClientPlus::debugEnabled
+     */
+    public function testCanConstructWithDebugEnabled()
+    {
+        $soapClient = new \DCarbone\SoapPlus\SoapClientPlus(self::$weatherWSDL, array(
+            'debug' => true,
+        ));
+
+        $this->assertTrue($soapClient->debugEnabled());
+
+        return $soapClient;
+    }
+
+    /**
+     * @covers \DCarbone\SoapPlus\SoapClientPlus::disableDebug
+     * @depends testCanConstructWithDebugEnabled
+     * @param \DCarbone\SoapPlus\SoapClientPlus $soapClient
+     */
+    public function testCanDisableDebugPostConstruct(\DCarbone\SoapPlus\SoapClientPlus $soapClient)
+    {
+        $soapClient->disableDebug();
+
+        $this->assertFalse($soapClient->debugEnabled());
+    }
+
+    /**
+     * @covers \DCarbone\SoapPlus\SoapClientPlus::getCurlClient
+     */
+    public function testCanGetCurlClient()
+    {
+        $soapClient = new \DCarbone\SoapPlus\SoapClientPlus(self::$weatherWSDL);
+
+        $curlPlusClient = $soapClient->getCurlClient();
+
+        $this->assertInstanceOf('\\DCarbone\\CurlPlus\\CurlPlusClient', $curlPlusClient);
+
+        return $soapClient;
+    }
+
+    /**
+     * @covers \DCarbone\SoapPlus\SoapClientPlus::getDefaultRequestHeaders
+     * @depends testCanGetCurlClient
+     * @param \DCarbone\SoapPlus\SoapClientPlus $soapClient
+     */
+    public function testCanGetDefaultRequestHeaders(\DCarbone\SoapPlus\SoapClientPlus $soapClient)
+    {
+        $defaultHeaders = $soapClient->getDefaultRequestHeaders();
+
+        $this->assertInternalType('array', $defaultHeaders);
+    }
 }

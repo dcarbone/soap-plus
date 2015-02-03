@@ -23,7 +23,7 @@
         "lib-curl" : "*",
         "lib-libxml" : "*",
         "ext-soap" : "*",
-        "dcarbone/curl-plus": "0.6.*"
+        "dcarbone/curl-plus": "~1.0"
     },
 
     "require-dev" : {
