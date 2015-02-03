@@ -3,7 +3,7 @@ soap-plus
 
 Build status:
 - master: [![Build Status](https://travis-ci.org/dcarbone/soap-plus.svg?branch=master)](https://travis-ci.org/dcarbone/soap-plus)
-- 0.7.2: [![Build Status](https://travis-ci.org/dcarbone/soap-plus.svg?tag=0.7.2)](https://travis-ci.org/dcarbone/soap-plus)
+- 0.8.0: [![Build Status](https://travis-ci.org/dcarbone/soap-plus.svg?tag=0.8.0)](https://travis-ci.org/dcarbone/soap-plus)
 
 In a nutshell, this class replaces the internal query mechanism used by PHP's <a href="http://www.php.net/manual/en/class.soapclient.php">SoapClient</a> class.
 The main reason for this wrapper is to enable consumption of NTLM-authenticated SharePoint SOAP services in a PHP application.
