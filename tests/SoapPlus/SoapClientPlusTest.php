@@ -313,13 +313,13 @@ XML;
     }
 
     /**
-     * @covers \DCarbone\SoapPlus\SoapClientPlus::getDefaultRequestHeaders
+     * @covers \DCarbone\SoapPlus\SoapClientPlus::getRequestHeaders
      * @depends testCanGetCurlClient
      * @param \DCarbone\SoapPlus\SoapClientPlus $soapClient
      */
     public function testCanGetDefaultRequestHeaders(\DCarbone\SoapPlus\SoapClientPlus $soapClient)
     {
-        $defaultHeaders = $soapClient->getDefaultRequestHeaders();
+        $defaultHeaders = $soapClient->getRequestHeaders();
 
         $this->assertInternalType('array', $defaultHeaders);
     }

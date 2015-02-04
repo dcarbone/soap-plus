@@ -1,5 +1,6 @@
 <?php namespace DCarbone\SoapPlus;
 
+use DCarbone\CurlPlus\CurlOptHelper;
 use DCarbone\CurlPlus\CurlPlusClient;
 use DCarbone\CurlPlus\ICurlPlusContainer;
 
@@ -50,12 +51,13 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
     protected $curlOptArray = array();
 
     /** @var array */
-    protected $defaultRequestHeaders = array(
-        'Content-type' => 'text/xml;charset="utf-8"',
-        'Accept' => 'text/xml',
-        'Cache-Control' => 'no-cache',
-        'Pragma' => 'no-cache',
-    );
+    protected $_defaultCurlOptArray = array();
+
+    /** @var array */
+    protected $_defaultRequestHeaders = array();
+
+    /** @var array */
+    protected $requestHeaders = array();
 
     /**
      * @readonly
@@ -82,8 +84,14 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
         $this->curlPlusClient = new CurlPlusClient();
         $this->_options = $options;
         $this->_wsdlCachePath = static::setupWSDLCachePath($options);
-        $this->curlOptArray = static::createCurlOptArray($options);
+        $this->curlOptArray = $this->_defaultCurlOptArray = static::createCurlOptArray($options);
         $this->_soapOptions = static::createSoapOptionArray($options);
+        $this->requestHeaders = $this->_defaultRequestHeaders = array(
+            'Content-type' => 'text/xml;charset="utf-8"',
+            'Accept' => 'text/xml',
+            'Cache-Control' => 'no-cache',
+            'Pragma' => 'no-cache',
+        );
 
         if ($wsdl !== null && strtolower(substr($wsdl, 0, 4)) === 'http')
             $wsdl = $this->loadWSDL($wsdl);
@@ -450,7 +458,7 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
         $this->curlPlusClient->setCurlOpts($this->curlOptArray);
 
         // Add the header strings
-        foreach($this->defaultRequestHeaders as $k=>$v)
+        foreach($this->requestHeaders as $k=>$v)
         {
             $this->getCurlClient()->setRequestHeader($k, $v);
         }
@@ -479,37 +487,6 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
     }
 
     /**
-     * @param array $requestHeaders
-     * @return void
-     */
-    public function setDefaultRequestHeaders(array $requestHeaders)
-    {
-        // For backwards compatibility sakes.
-        $key = key($requestHeaders);
-        if (is_numeric($key))
-        {
-            $this->defaultRequestHeaders = array();
-            foreach($requestHeaders as $header)
-            {
-                $exp = explode(':', $requestHeaders, 2);
-                $this->defaultRequestHeaders[$exp[0]] = $exp[1];
-            }
-        }
-        else
-        {
-            $this->defaultRequestHeaders = $requestHeaders;
-        }
-    }
-
-    /**
-     * @return array
-     */
-    public function getDefaultRequestHeaders()
-    {
-        return $this->defaultRequestHeaders;
-    }
-
-    /**
      * @return CurlPlusClient
      */
     public function getCurlClient()
@@ -527,20 +504,53 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
     }
 
     /**
+     * @param array $requestHeaders
+     * @return void
+     */
+    public function setRequestHeaders(array $requestHeaders)
+    {
+        // For backwards compatibility sakes.
+        $key = key($requestHeaders);
+        if (is_numeric($key))
+        {
+            $this->requestHeaders = array();
+            foreach($requestHeaders as $header)
+            {
+                $exp = explode(':', $header, 2);
+                $this->requestHeaders[$exp[0]] = $exp[1];
+            }
+        }
+        else
+        {
+            $this->requestHeaders = $requestHeaders;
+        }
+    }
+
+    /**
      * @return array
      */
     public function getRequestHeaders()
     {
-        return $this->getCurlClient()->getRequestHeaders();
+        return $this->requestHeaders;
     }
 
     /**
+     * @deprecated No longer differentiating between "user" and "default" request headers.  Use getRequestHeaders instead
+     * @return array
+     */
+    public function getDefaultRequestHeaders()
+    {
+        return $this->requestHeaders;
+    }
+
+    /**
+     * @deprecated No longer differentiating between "user" and "default" request headers.  Use setRequestHeaders instead
      * @param array $headers
      * @return $this
      */
-    public function setRequestHeaders(array $headers)
+    public function setDefaultRequestHeaders(array $headers)
     {
-        $this->getCurlClient()->setRequestHeaders($headers);
+        $this->requestHeaders = $headers;
         return $this;
     }
 
@@ -551,7 +561,7 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
      */
     public function setRequestHeader($name, $value)
     {
-        $this->getCurlClient()->setRequestHeader($name, $value);
+        $this->requestHeaders[$name] = $value;
         return $this;
     }
 
@@ -568,13 +578,22 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
     }
 
     /**
+     * @return $this
+     */
+    public function resetRequestHeaders()
+    {
+        $this->requestHeaders = $this->_defaultRequestHeaders;
+        return $this;
+    }
+
+    /**
      * @param int $opt
      * @param mixed $value
      * @return $this
      */
     public function setCurlOpt($opt, $value)
     {
-        $this->getCurlClient()->setCurlOpt($opt, $value);
+        $this->curlOptArray[$opt] = $value;
         return $this;
     }
 
@@ -584,7 +603,9 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
      */
     public function removeCurlOpt($opt)
     {
-        $this->getCurlClient()->removeCurlOpt($opt);
+        if (isset($this->curlOptArray[$opt]))
+            unset($this->curlOptArray[$opt]);
+
         return $this;
     }
 
@@ -594,7 +615,7 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
      */
     public function setCurlOpts(array $opts)
     {
-        $this->getCurlClient()->setCurlOpts($opts);
+        $this->curlOptArray = $opts;
         return $this;
     }
 
@@ -604,7 +625,10 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
      */
     public function getCurlOpts($humanReadable = false)
     {
-        return $this->getCurlClient()->getCurlOpts($humanReadable);
+        if ($humanReadable)
+            return CurlOptHelper::createHumanReadableCurlOptArray($this->curlOptArray);
+
+        return $this->curlOptArray;
     }
 
     /**
@@ -612,7 +636,7 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
      */
     public function resetCurlOpts()
     {
-        $this->getCurlClient()->reset();
+        $this->curlOptArray = $this->_defaultCurlOptArray;
         return $this;
     }
 
@@ -624,6 +648,8 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
     public function reset()
     {
         $this->getCurlClient()->reset();
+        $this->resetCurlOpts();
+        $this->resetRequestHeaders();
         return $this;
     }
 
