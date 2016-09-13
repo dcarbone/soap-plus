@@ -9,7 +9,7 @@
         "soapclient"
     ],
     "homepage": "https://github.com/dcarbone/soap-plus",
-    "license": "MIT",
+    "license": "Apache-2.0",
 
     "authors" : [
         {
@@ -19,11 +19,11 @@
     ],
 
     "require" : {
-        "php" : ">=5.3.3",
+        "php" : ">=5.4.0",
         "lib-curl" : "*",
         "lib-libxml" : "*",
         "ext-soap" : "*",
-        "dcarbone/curl-plus": "~1.0"
+        "dcarbone/curl-plus": "3.0.*"
     },
 
     "require-dev" : {

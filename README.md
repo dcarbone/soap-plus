@@ -3,13 +3,23 @@ soap-plus
 
 Build status:
 - master: [![Build Status](https://travis-ci.org/dcarbone/soap-plus.svg?branch=master)](https://travis-ci.org/dcarbone/soap-plus)
-- 0.8.0: [![Build Status](https://travis-ci.org/dcarbone/soap-plus.svg?tag=0.8.0)](https://travis-ci.org/dcarbone/soap-plus)
 
 In a nutshell, this class replaces the internal query mechanism used by PHP's <a href="http://www.php.net/manual/en/class.soapclient.php">SoapClient</a> class.
 The main reason for this wrapper is to enable consumption of NTLM-authenticated SharePoint SOAP services in a PHP application.
 This is not a data-mapper, it simply returns data as the normal SoapClient would, but all of the internal querying
 is handled by the PHP CURL library.
 
+## Installation
+
+This lib is designed to be used with [Composer](https://getcomposer.org)
+
+"Require" entry:
+
+```json
+{
+    "dcarbone/soap-plus": "1.0.*"
+}
+```
 
 ## Constructor
 
@@ -148,5 +158,3 @@ to handle the transformation.
 As I stated in the buff, I created this library to help ease the pain of SharePoint services consumption in PHP wherein I had to use
 the NTLM auth mechanism.  I am always open to new feature ideas from the community, so if you are using this library and have a
 suggestion, please let me know.  I always enjoy a good challenge :)
-
-```

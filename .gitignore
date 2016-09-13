@@ -1,0 +1,6 @@
+/.idea
+/*.iml
+/composer.lock
+/vendor
+/test-reports
+/tests/misc/wsdl-cache

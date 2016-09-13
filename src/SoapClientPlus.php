@@ -1,8 +1,23 @@
 <?php namespace DCarbone\SoapPlus;
 
+/*
+   Copyright 2012-2016 Daniel Carbone (daniel.p.carbone@gmail.com)
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+*/
+
 use DCarbone\CurlPlus\CurlOptHelper;
 use DCarbone\CurlPlus\CurlPlusClient;
-use DCarbone\CurlPlus\ICurlPlusContainer;
 
 /**
  * Class SoapClientPlus
@@ -11,11 +26,11 @@ use DCarbone\CurlPlus\ICurlPlusContainer;
  * @property array options
  * @property array soapOptions
  * @property array debugQueries
- * @property array debugResults
+ * @property \DCarbone\CurlPlus\CurlPlusResponse[] debugResults
  * @property string wsdlCachePath
  * @property string wsdlTmpFileName
  */
-class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
+class SoapClientPlus extends \SoapClient
 {
     /**
      * @readonly
@@ -71,13 +86,15 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
      */
     protected $_debugResults = array();
 
+    /** @var int */
+    protected $_sxeArgs;
+
     /**
      * Constructor
      *
      * @param string $wsdl
      * @param array $options
      * @throws \RuntimeException
-     * @return \DCarbone\SoapPlus\SoapClientPlus
      */
     public function __construct($wsdl, array $options = array())
     {
@@ -95,6 +112,11 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
 
         if ($wsdl !== null && strtolower(substr($wsdl, 0, 4)) === 'http')
             $wsdl = $this->loadWSDL($wsdl);
+
+        if (defined('LIBXML_PARSEHUGE'))
+            $this->_sxeArgs = LIBXML_COMPACT | LIBXML_NOBLANKS | LIBXML_PARSEHUGE;
+        else
+            $this->_sxeArgs = LIBXML_COMPACT | LIBXML_NOBLANKS;
 
         parent::SoapClient($wsdl, $this->_soapOptions);
     }
@@ -170,9 +192,9 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
             switch($optCache)
             {
                 case WSDL_CACHE_MEMORY :
-                    throw new \RuntimeException('WSDL_CACHE_MEMORY is not yet supported by SoapClientPlus');
+                    throw new \RuntimeException('WSDL_CACHE_MEMORY is not supported by SoapClientPlus');
                 case WSDL_CACHE_BOTH :
-                    throw new \RuntimeException('WSDL_CACHE_BOTH is not yet supported by SoapClientPlus');
+                    throw new \RuntimeException('WSDL_CACHE_BOTH is not supported by SoapClientPlus');
 
                 case WSDL_CACHE_DISK : $cache = true; break;
                 case WSDL_CACHE_NONE : $cache = false; break;
@@ -197,11 +219,11 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
         $response = $this->curlPlusClient->execute(true);
 
         // Check for error
-        if ($response->getHttpCode() != 200 || $response->getResponse() === false)
-            throw new \Exception('Error thrown while trying to retrieve WSDL file: "'.$response->getError().'"');
+        if ($response->httpCode != 200 || $response->responseBody === false)
+            throw new \Exception('Error thrown while trying to retrieve WSDL file: "'.$response->curlError.'"');
 
         // Create a local copy of WSDL file and return the file path to it.
-        $path = $this->createWSDLCache(trim((string)$response));
+        $path = $this->createWSDLCache(trim((string)$response->responseBody));
         return $path;
     }
 
@@ -228,10 +250,9 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
      */
     protected function createWSDLCache($wsdlString)
     {
-        $file = fopen($this->_wsdlCachePath.$this->_wsdlTmpFileName, 'w+');
-        fwrite($file, $wsdlString, strlen($wsdlString));
-        fclose($file);
-        return $this->_wsdlCachePath.$this->_wsdlTmpFileName;
+        $file = $this->_wsdlCachePath.$this->_wsdlTmpFileName;
+        file_put_contents($file, $wsdlString);
+        return $file;
     }
 
     /**
@@ -349,42 +370,58 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
     public function createArgumentArrayFromXML($arguments, $function_name)
     {
         try {
-            if (defined('LIBXML_PARSEHUGE'))
-                $arg = LIBXML_COMPACT | LIBXML_NOBLANKS | LIBXML_PARSEHUGE;
-            else
-                $arg = LIBXML_COMPACT | LIBXML_NOBLANKS;
-
-            $sxe = @new \SimpleXMLElement(trim($arguments), $arg);
+            libxml_use_internal_errors(true);
+            $sxe = new \SimpleXMLElement(trim($arguments), $this->_sxeArgs);
         }
         catch (\Exception $e)
         {
-            if (libxml_get_last_error() !== false)
+            // If they have a catcher later on...
+            libxml_use_internal_errors(false);
+
+            if (false === ($lastError = libxml_get_last_error()))
             {
                 throw new \RuntimeException(
-                    get_class($this).'::createArgumentArrayFromXML - Error found while parsing ActionBody: "'.
-                    libxml_get_last_error()->message.'"', $e->getCode(), $e);
+                    sprintf(
+                        '%s::createArgumentArrayFromXML - Error found while parsing ActionBody: "%s"',
+                        get_class($this),
+                        $e->getMessage()
+                    ),
+                    $e->getCode(),
+                    $e
+                );
             }
-            else
-            {
-                throw new \RuntimeException(
-                    get_class($this).'::createArgumentArrayFromXML - Error found while parsing ActionBody: "'.
-                    $e->getMessage().'"', $e->getCode(), $e);
-            }
+
+            throw new \RuntimeException(
+                sprintf(
+                    '%s::createArgumentArrayFromXML - Error found while parsing ActionBody: "%s"',
+                    get_class($this),
+                    $lastError->message
+                ),
+                $e->getCode(),
+                $e
+            );
         }
+
+        // If no exception...
+        libxml_use_internal_errors(false);
 
         if (!($sxe instanceof \SimpleXMLElement))
         {
-            if (libxml_get_last_error() !== false)
+            if (false === ($lastError = libxml_get_last_error()))
             {
-                throw new \RuntimeException(
-                    get_class($this).'::createArgumentArrayFromXML - Error found while parsing ActionBody: "'.
-                    libxml_get_last_error()->message.'"');
+                throw new \RuntimeException(sprintf(
+                    '%s::createArgumentArrayFromXML - Encountered unknown error while parsing ActionBody.',
+                    get_class($this)
+                ));
             }
-            else
-            {
-                throw new \RuntimeException(
-                    get_class($this).'::createArgumentArrayFromXML - Encountered unknown error while parsing ActionBody.');
-            }
+
+            throw new \RuntimeException(
+                sprintf(
+                    '%s::createArgumentArrayFromXML - Error found while parsing ActionBody: "%s"',
+                    get_class($this),
+                    $lastError->message
+                )
+            );
         }
 
         $name = $sxe->getName();
@@ -408,7 +445,7 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
      */
     protected function parseXML(\SimpleXMLElement $element, array &$array)
     {
-        /** @var array $children */
+        /** @var \SimpleXMLElement[] $children */
         $children = $element->children();
 //        $attributes = $element->attributes();
         $elementValue = trim((string)$element);
@@ -418,7 +455,6 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
         {
             if ($elementName === 'any')
             {
-                /** @var \SimpleXMLElement $child */
                 $child = $children[0];
                 $array[$elementName] = $child->saveXML();
             }
@@ -429,7 +465,6 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
 
                 foreach($children as $child)
                 {
-                    /** @var \SimpleXMLElement $child */
                     $this->parseXML($child, $array[$elementName]);
                 }
             }
@@ -469,36 +504,23 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
         if ($this->debugEnabled())
         {
             $this->_debugQueries[] = array(
-                'headers' => $ret->getRequestHeaders(),
+                'headers' => $ret->getRequestHeaderArray(),
                 'body' => (string)$request,
             );
 
-            $this->_debugResults[] = array(
-                'code' => $ret->getHttpCode(),
-                'headers' => $ret->getResponseHeaders(),
-                'response' => (string)$ret->getResponse(),
-            );
+            $this->_debugResults[] = $ret;
         }
 
-        if ($ret->getResponse() == false || $ret->getHttpCode() != 200)
-            throw new \Exception('DCarbone\SoapClientPlus::__doRequest - CURL Error during call: "'. addslashes($ret->getError()).'", "'.addslashes($ret->getResponse()).'"');
+        if ($ret->responseBody == false || $ret->httpCode !== 200)
+            throw new \Exception('DCarbone\SoapClientPlus::__doRequest - CURL Error during call: "'. addslashes($ret->curlError).'", "'.addslashes($ret->responseBody).'"');
 
-        return $ret->getResponse();
+        return $ret->responseBody;
     }
 
     /**
      * @return CurlPlusClient
      */
     public function getCurlClient()
-    {
-        return $this->curlPlusClient;
-    }
-
-    /**
-     * @deprecated This has been deprecated as of dcarbone/curl-plus 1.0.  Use getCurlClient instead.
-     * @return CurlPlusClient
-     */
-    public function &getClient()
     {
         return $this->curlPlusClient;
     }
@@ -511,7 +533,7 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
     {
         // For backwards compatibility sakes.
         $key = key($requestHeaders);
-        if (is_numeric($key))
+        if (is_int($key))
         {
             $this->requestHeaders = array();
             foreach($requestHeaders as $header)
@@ -643,7 +665,7 @@ class SoapClientPlus extends \SoapClient implements ICurlPlusContainer
     /**
      * Reset to new state
      *
-     * @return ICurlPlusContainer
+     * @return SoapClientPlus
      */
     public function reset()
     {
