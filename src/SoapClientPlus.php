@@ -118,7 +118,7 @@ class SoapClientPlus extends \SoapClient
         else
             $this->_sxeArgs = LIBXML_COMPACT | LIBXML_NOBLANKS;
 
-        parent::SoapClient($wsdl, $this->_soapOptions);
+        parent::__construct($wsdl, $this->_soapOptions);
     }
 
     /**
