@@ -5,10 +5,10 @@ require __DIR__.'/../misc/cleanup.php';
 /**
  * Class SoapClientTest
  */
-class SoapClientPlusTest extends \PHPUnit_Framework_TestCase
+class SoapClientPlusTest extends \PHPUnit\Framework\TestCase
 {
     /** @var string */
-    public static $weatherWSDL = 'http://wsf.cdyne.com/WeatherWS/Weather.asmx?WSDL';
+    public static $weatherWSDL = "http://ws.cdyne.com/emailverify/Emailvernotestemail.asmx?WSDL";
 
     /**
      * @covers \DCarbone\SoapPlus\SoapClientPlus::__construct
@@ -24,6 +24,7 @@ class SoapClientPlusTest extends \PHPUnit_Framework_TestCase
      */
     public function testCanConstructSoapClientPlusWithNoOptions()
     {
+		echo self::$weatherWSDL;
         $soapClient = new \DCarbone\SoapPlus\SoapClientPlus(self::$weatherWSDL);
 
         $this->assertInstanceOf('\\DCarbone\\SoapPlus\\SoapClientPlus', $soapClient);
@@ -96,12 +97,12 @@ class SoapClientPlusTest extends \PHPUnit_Framework_TestCase
         $wsdlCachePath = $soapClient->wsdlCachePath;
         $wsdlTmpName = $soapClient->wsdlTmpFileName;
 
-        $this->assertInternalType('array', $options);
-        $this->assertInternalType('array', $soapOptions);
-        $this->assertInternalType('array', $debugQueries);
-        $this->assertInternalType('array', $debugResults);
-        $this->assertInternalType('string', $wsdlCachePath);
-        $this->assertInternalType('string', $wsdlTmpName);
+        $this->assertIsArray($options);
+        $this->assertIsArray($soapOptions);
+        $this->assertIsArray($debugQueries);
+        $this->assertIsArray($debugResults);
+        $this->assertIsString($wsdlCachePath);
+        $this->assertIsString($wsdlTmpName);
     }
 
     /**
@@ -113,7 +114,8 @@ class SoapClientPlusTest extends \PHPUnit_Framework_TestCase
      */
     public function testExceptionThrownWhenTryingToGetInvalidProperty(\DCarbone\SoapPlus\SoapClientPlus $soapClient)
     {
-        $nope = $soapClient->nope;
+		$this->expectException(OutOfBoundsException::class);
+		$nope = $soapClient->nope;
     }
 
     /**
@@ -128,14 +130,15 @@ class SoapClientPlusTest extends \PHPUnit_Framework_TestCase
     public function testCanGetWeatherForecastWithArrayRequest(\DCarbone\SoapPlus\SoapClientPlus $soapClient)
     {
         $array = array(
-            'GetCityForecastByZIP' => array(
-                'ZIP' => '37209',
+            'VerifyEmail' => array(
+                'email' => 'test@gmail.com',
+                'LicenseKey' => ''
             ),
         );
 
-        $response = $soapClient->GetCityForecastByZIP($array);
-        $this->assertInternalType('object', $response);
-        $this->assertObjectHasAttribute('GetCityForecastByZIPResult', $response);
+        $response = $soapClient->VerifyEmail($array);
+        $this->assertIsObject($response);
+        $this->assertObjectHasAttribute('VerifyEmailResult', $response);
     }
 
     /**
@@ -152,14 +155,15 @@ class SoapClientPlusTest extends \PHPUnit_Framework_TestCase
     public function testCanGetWeatherForecastWithXMLRequest(\DCarbone\SoapPlus\SoapClientPlus $soapClient)
     {
         $xml = <<<XML
-<GetCityForecastByZIP>
-    <ZIP>37209</ZIP>
-</GetCityForecastByZIP>
+<VerifyEmail>
+    <email>test@gmail.com</email>
+    <LicenseKey></LicenseKey>
+</VerifyEmail>
 XML;
 
-        $response = $soapClient->GetCityForecastByZIP($xml);
-        $this->assertInternalType('object', $response);
-        $this->assertObjectHasAttribute('GetCityForecastByZIPResult', $response);
+        $response = $soapClient->VerifyEmail($xml);
+        $this->assertIsObject($response);
+        $this->assertObjectHasAttribute('VerifyEmailResult', $response);
     }
 
     /**
@@ -192,6 +196,7 @@ XML;
      */
     public function testExceptionThrownWhenInvalidAuthTypeSpecified()
     {
+        $this->expectException(InvalidArgumentException::class);
         $soapClient = new \DCarbone\SoapPlus\SoapClientPlus(self::$weatherWSDL, array(
             'wsdl_cache_path' => __DIR__.'/../misc/wsdl-cache',
             'login' => 'my_login',
@@ -231,6 +236,7 @@ XML;
      */
     public function testExceptionThrownWhenAttemptingToSetWSDLCacheMemory()
     {
+        $this->expectException(RuntimeException::class);
         $soapClient = new \DCarbone\SoapPlus\SoapClientPlus(self::$weatherWSDL, array(
             'cache_wsdl' => WSDL_CACHE_MEMORY,
         ));
@@ -242,6 +248,7 @@ XML;
      */
     public function testExceptionThrownWhenAttemptingToSetWSDLCacheBoth()
     {
+        $this->expectException(RuntimeException::class);
         $soapClient = new \DCarbone\SoapPlus\SoapClientPlus(self::$weatherWSDL, array(
             'cache_wsdl' => WSDL_CACHE_BOTH,
         ));
@@ -321,6 +328,6 @@ XML;
     {
         $defaultHeaders = $soapClient->getRequestHeaders();
 
-        $this->assertInternalType('array', $defaultHeaders);
+        $this->assertIsArray($defaultHeaders);
     }
 }
