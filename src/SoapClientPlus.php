@@ -118,7 +118,7 @@ class SoapClientPlus extends \SoapClient
         else
             $this->_sxeArgs = LIBXML_COMPACT | LIBXML_NOBLANKS;
 
-        parent::SoapClient($wsdl, $this->_soapOptions);
+        parent::__construct($wsdl, $this->_soapOptions);
     }
 
     /**
@@ -371,7 +371,7 @@ class SoapClientPlus extends \SoapClient
     {
         try {
             libxml_use_internal_errors(true);
-            $sxe = new \SimpleXMLElement(trim($arguments), $this->_sxeArgs);
+            $sxe = new \SimpleXMLElement(trim($arguments), $this->_sxeArgs, str_contains($arguments, 'http'));
         }
         catch (\Exception $e)
         {
@@ -498,7 +498,7 @@ class SoapClientPlus extends \SoapClient
             $this->getCurlClient()->setRequestHeader($k, $v);
         }
         $this->curlPlusClient->setRequestHeader('SOAPAction', $action);
-        
+
         $ret = $this->curlPlusClient->execute();
 
         if ($this->debugEnabled())
