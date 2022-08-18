@@ -17,7 +17,7 @@ This lib is designed to be used with [Composer](https://getcomposer.org)
 
 ```json
 {
-    "dcarbone/soap-plus": "1.0.*"
+    "dcarbone/soap-plus": "2.1.*"
 }
 ```
 
