@@ -1,4 +1,6 @@
-<?php namespace DCarbone\SoapPlus;
+<?php declare(strict_types=1);
+
+namespace DCarbone\SoapPlus;
 
 /*
    Copyright 2012-2016 Daniel Carbone (daniel.p.carbone@gmail.com)
@@ -34,69 +36,69 @@ class SoapClientPlus extends \SoapClient
 {
     /**
      * @readonly
-     * @var string
+     * @var string|null
      */
-    protected $_wsdlCachePath = null;
+    protected ?string $_wsdlCachePath;
 
     /** @var \DCarbone\CurlPlus\CurlPlusClient */
-    protected $curlPlusClient;
+    protected CurlPlusClient $curlPlusClient;
 
     /**
      * @readonly
      * @var array
      */
-    protected $_options;
+    protected array $_options;
 
     /**
      * @readonly
      * @var array
      */
-    protected $_soapOptions;
+    protected array $_soapOptions;
 
     /**
      * @readonly
-     * @var string
+     * @var string|null
      */
-    protected $_wsdlTmpFileName = null;
+    protected ?string $_wsdlTmpFileName;
 
     /** @var bool */
-    protected $clearTmpFileOnDestruct = false;
+    protected bool $clearTmpFileOnDestruct = false;
 
     /** @var array */
-    protected $curlOptArray = array();
+    protected array $curlOptArray = [];
 
     /** @var array */
-    protected $_defaultCurlOptArray = array();
+    protected array $_defaultCurlOptArray = [];
 
     /** @var array */
-    protected $_defaultRequestHeaders = array();
+    protected array $_defaultRequestHeaders = [];
 
     /** @var array */
-    protected $requestHeaders = array();
+    protected array $requestHeaders = [];
 
     /**
      * @readonly
      * @var array
      */
-    protected $_debugQueries = array();
+    protected array $_debugQueries = [];
 
     /**
      * @readonly
      * @var array
      */
-    protected $_debugResults = array();
+    protected array $_debugResults = [];
 
     /** @var int */
-    protected $_sxeArgs;
+    protected int $_sxeArgs;
 
     /**
      * Constructor
      *
-     * @param string $wsdl
+     * @param string|null $wsdl
      * @param array $options
-     * @throws \RuntimeException
+     * @throws \SoapFault
      */
-    public function __construct($wsdl, array $options = array())
+    public function __construct(?string $wsdl, array $options = array())
     {
         $this->curlPlusClient = new CurlPlusClient();
         $this->_options = $options;
@@ -110,13 +112,15 @@ class SoapClientPlus extends \SoapClient
             'Pragma' => 'no-cache',
         );
 
-        if ($wsdl !== null && strtolower(substr($wsdl, 0, 4)) === 'http')
+        if (null !== $wsdl && strtolower(substr($wsdl, 0, 4)) === 'http') {
             $wsdl = $this->loadWSDL($wsdl);
+        }
 
-        if (defined('LIBXML_PARSEHUGE'))
+        if (defined('LIBXML_PARSEHUGE')) {
             $this->_sxeArgs = LIBXML_COMPACT | LIBXML_NOBLANKS | LIBXML_PARSEHUGE;
-        else
+        } else {
             $this->_sxeArgs = LIBXML_COMPACT | LIBXML_NOBLANKS;
+        }
 
         parent::__construct($wsdl, $this->_soapOptions);
     }
@@ -126,50 +130,37 @@ class SoapClientPlus extends \SoapClient
      */
     public function __destruct()
     {
-        if ($this->clearTmpFileOnDestruct && file_exists($this->_wsdlCachePath.$this->_wsdlTmpFileName))
-            @unlink($this->_wsdlCachePath.$this->_wsdlTmpFileName);
+        if ($this->clearTmpFileOnDestruct && file_exists($this->_wsdlCachePath.$this->_wsdlTmpFileName)) {
+            @unlink($this->_wsdlCachePath . $this->_wsdlTmpFileName);
+        }
     }
 
     /**
      * @param string $param
-     * @return array
+     * @return array|string
      * @throws \OutOfBoundsException
      */
-    public function __get($param)
+    public function __get(string $param)
     {
-        switch($param)
-        {
-            case 'options':
-                return $this->_options;
-
-            case 'soapOptions':
-                return $this->_soapOptions;
-
-            case 'debugQueries':
-                return $this->_debugQueries;
-
-            case 'debugResults':
-                return $this->_debugResults;
-
-            case 'wsdlCachePath':
-                return $this->_wsdlCachePath;
-
-            case 'wsdlTmpFileName':
-                return $this->_wsdlTmpFileName;
-
-            default:
-                throw new \OutOfBoundsException('Object does not have public property with name "'.$param.'".');
-        }
+        return match ($param) {
+            'options' => $this->_options,
+            'soapOptions' => $this->_soapOptions,
+            'debugQueries' => $this->_debugQueries,
+            'debugResults' => $this->_debugResults,
+            'wsdlCachePath' => $this->_wsdlCachePath,
+            'wsdlTmpFileName' => $this->_wsdlTmpFileName,
+            default => throw new \OutOfBoundsException('Object does not have public property with name "' . $param . '".'),
+        };
     }
 
     /**
      * Load that WSDL file
      *
-     * @param $wsdlURL
+     * @param string $wsdlURL
      * @return string
      * @throws \Exception
      */
-    protected function loadWSDL($wsdlURL)
+    protected function loadWSDL(string $wsdlURL): string
     {
         // Get a SHA1 hash of the full WSDL url to use as the cache filename
         $this->_wsdlTmpFileName = sha1(strtolower($wsdlURL)).'.xml';
@@ -184,31 +175,33 @@ class SoapClientPlus extends \SoapClient
             $optCache = null;
 
         // By default defer to the global cache value
-        $cache = $soapCache != '0' ? true : false;
+        $cache = $soapCache != '0';
 
         // If they specifically pass in a cache value, use it.
-        if ($optCache !== null)
-        {
-            switch($optCache)
-            {
-                case WSDL_CACHE_MEMORY :
+        if ($optCache !== null) {
+            switch($optCache) {
+                case WSDL_CACHE_MEMORY:
                     throw new \RuntimeException('WSDL_CACHE_MEMORY is not supported by SoapClientPlus');
-                case WSDL_CACHE_BOTH :
+                case WSDL_CACHE_BOTH:
                     throw new \RuntimeException('WSDL_CACHE_BOTH is not supported by SoapClientPlus');
 
-                case WSDL_CACHE_DISK : $cache = true; break;
-                case WSDL_CACHE_NONE : $cache = false; break;
+                case WSDL_CACHE_DISK:
+                    $cache = true;
+                    break;
+                case WSDL_CACHE_NONE:
+                    $cache = false;
+                    break;
             }
         }
 
         $this->clearTmpFileOnDestruct = !$cache;
 
         // If cache === true, attempt to load from cache.
-        if ($cache === true)
-        {
+        if ($cache === true) {
             $path = $this->loadWSDLFromCache();
-            if ($path !== null)
+            if (null !== $path) {
                 return $path;
+            }
         }
 
         // Otherwise move on!
@@ -223,8 +216,7 @@ class SoapClientPlus extends \SoapClient
             throw new \Exception('Error thrown while trying to retrieve WSDL file: "'.$response->curlError.'"');
 
         // Create a local copy of WSDL file and return the file path to it.
-        $path = $this->createWSDLCache(trim((string)$response->responseBody));
-        return $path;
+        return $this->createWSDLCache(trim((string)$response->responseBody));
     }
 
     /**
@@ -232,12 +224,13 @@ class SoapClientPlus extends \SoapClient
      *
      * @return null|string
      */
-    protected function loadWSDLFromCache()
+    protected function loadWSDLFromCache(): ?string
     {
         $filePath = $this->_wsdlCachePath.$this->_wsdlTmpFileName;
 
-        if (file_exists($filePath))
+        if (file_exists($filePath)) {
             return $filePath;
+        }
 
         return null;
     }
@@ -248,7 +241,7 @@ class SoapClientPlus extends \SoapClient
      * @param string $wsdlString
      * @return string
      */
-    protected function createWSDLCache($wsdlString)
+    protected function createWSDLCache(string $wsdlString): string
     {
         $file = $this->_wsdlCachePath.$this->_wsdlTmpFileName;
         file_put_contents($file, $wsdlString);
@@ -258,7 +251,7 @@ class SoapClientPlus extends \SoapClient
     /**
      * @return string|null
      */
-    public function getWSDLTmpFileName()
+    public function getWSDLTmpFileName(): ?string
     {
         if (isset($this->_wsdlTmpFileName))
             return $this->_wsdlTmpFileName;
@@ -269,19 +262,16 @@ class SoapClientPlus extends \SoapClient
     /**
      * @return bool
      */
-    public function debugEnabled()
+    public function debugEnabled(): bool
     {
-        if (!isset($this->_options['debug']))
-            return false;
-
-        return (bool)$this->_options['debug'];
+        return (bool)($this->_options['debug'] ?? false);
     }
 
     /**
      * @deprecated Deprecated since 0.8.  Use debugEnabled instead
      * @return bool
      */
-    protected function isDebug()
+    protected function isDebug(): bool
     {
         return $this->debugEnabled();
     }
@@ -289,7 +279,7 @@ class SoapClientPlus extends \SoapClient
     /**
      * @return void
      */
-    public function enableDebug()
+    public function enableDebug(): void
     {
         $this->_options['debug'] = true;
     }
@@ -297,7 +287,7 @@ class SoapClientPlus extends \SoapClient
     /**
      * @return void
      */
-    public function disableDebug()
+    public function disableDebug(): void
     {
         $this->_options['debug'] = false;
     }
@@ -305,7 +295,7 @@ class SoapClientPlus extends \SoapClient
     /**
      * @return array
      */
-    public function getDebugQueries()
+    public function getDebugQueries(): array
     {
         return $this->_debugQueries;
     }
@@ -313,7 +303,7 @@ class SoapClientPlus extends \SoapClient
     /**
      * @return array
      */
-    public function getDebugResults()
+    public function getDebugResults(): array
     {
         return $this->_debugResults;
     }
@@ -321,65 +311,63 @@ class SoapClientPlus extends \SoapClient
     /**
      * @return void
      */
-    public function resetDebugValue()
+    public function resetDebugValue(): void
     {
-        $this->_debugQueries = array();
-        $this->_debugResults = array();
+        $this->_debugQueries = [];
+        $this->_debugResults = [];
     }
 
     /**
      * Just directly call the __soapCall method.
      *
-     * @deprecated
-     * @param string $function_name
-     * @param string $arguments
+     * @param string $name
+     * @param string|array $args
      * @return mixed
+     * @deprecated
      */
-    public function __call($function_name, $arguments)
+    public function __call(string $name, $args)
     {
-        array_unshift($arguments, $function_name);
-        return call_user_func_array('self::__soapCall', $arguments);
+        array_unshift($args, $name);
+        return call_user_func_array('self::__soapCall', $args);
     }
 
     /**
      * __soapCall overload
      *
-     * @param string $function_name
-     * @param array $arguments
+     * @param string $name
+     * @param string|array $args
      * @param array $options
-     * @param array $input_headers
-     * @param array $output_headers
+     * @param array $inputHeaders
+     * @param array $outputHeaders
      * @return mixed|void
+     * @throws \Exception
      */
-    public function __soapCall($function_name, $arguments, $options = array(), $input_headers = array(), &$output_headers = array())
+    public function __soapCall(string $name, string|array $args, $options = [], $inputHeaders = [], &$outputHeaders = [])
     {
-        if (is_string($arguments))
-            $arguments = $this->createArgumentArrayFromXML($arguments, $function_name);
+        if (is_string($args)) {
+            $args = $this->createArgumentArrayFromXML($args, $name);
+        }
 
-        return parent::__soapCall($function_name, $arguments, $options, $input_headers, $output_headers);
+        return parent::__soapCall($name, $args, $options, $inputHeaders, $outputHeaders);
     }
 
     /**
      * Parse things because soap.
      *
-     * @param $arguments
-     * @param $function_name
+     * @param string $arguments
+     * @param string $function_name
      * @return array
-     * @throws \Exception
      */
-    public function createArgumentArrayFromXML($arguments, $function_name)
+    public function createArgumentArrayFromXML(string $arguments, string $function_name): array
     {
         try {
             libxml_use_internal_errors(true);
             $sxe = new \SimpleXMLElement(trim($arguments), $this->_sxeArgs, str_contains($arguments, 'http'));
-        }
-        catch (\Exception $e)
-        {
+        } catch (\Exception $e) {
             // If they have a catcher later on...
             libxml_use_internal_errors(false);
 
-            if (false === ($lastError = libxml_get_last_error()))
-            {
+            if (false === ($lastError = libxml_get_last_error())) {
                 throw new \RuntimeException(
                     sprintf(
                         '%s::createArgumentArrayFromXML - Error found while parsing ActionBody: "%s"',
@@ -405,10 +393,8 @@ class SoapClientPlus extends \SoapClient
         // If no exception...
         libxml_use_internal_errors(false);
 
-        if (!($sxe instanceof \SimpleXMLElement))
-        {
-            if (false === ($lastError = libxml_get_last_error()))
-            {
+        if (!($sxe instanceof \SimpleXMLElement)) {
+            if (false === ($lastError = libxml_get_last_error())) {
                 throw new \RuntimeException(sprintf(
                     '%s::createArgumentArrayFromXML - Encountered unknown error while parsing ActionBody.',
                     get_class($this)
@@ -427,8 +413,7 @@ class SoapClientPlus extends \SoapClient
         $name = $sxe->getName();
         $array = array($function_name => array());
 
-        foreach($sxe->children() as $element)
-        {
+        foreach($sxe->children() as $element) {
             /** @var $element \SimpleXMLElement */
             $this->parseXML($element, $array[$name]);
         }
@@ -443,7 +428,7 @@ class SoapClientPlus extends \SoapClient
      * @param array $array
      * @return void
      */
-    protected function parseXML(\SimpleXMLElement $element, array &$array)
+    protected function parseXML(\SimpleXMLElement $element, array &$array): void
     {
         /** @var \SimpleXMLElement[] $children */
         $children = $element->children();
@@ -451,26 +436,19 @@ class SoapClientPlus extends \SoapClient
         $elementValue = trim((string)$element);
         $elementName = $element->getName();
 
-        if (count($children) > 0)
-        {
-            if ($elementName === 'any')
-            {
+        if (count($children) > 0) {
+            if ($elementName === 'any') {
                 $child = $children[0];
                 $array[$elementName] = $child->saveXML();
-            }
-            else
-            {
-                if (!isset($array[$elementName]))
+            } else {
+                if (!isset($array[$elementName])) {
                     $array[$elementName] = array();
-
-                foreach($children as $child)
-                {
+                }
+                foreach($children as $child) {
                     $this->parseXML($child, $array[$elementName]);
                 }
             }
-        }
-        else
-        {
+        } else {
             $array[$elementName] = $elementValue;
         }
     }
@@ -482,11 +460,11 @@ class SoapClientPlus extends \SoapClient
      * @param string $location
      * @param string $action
      * @param int $version
-     * @param int $one_way
+     * @param int $oneWay
      * @return string
      * @throws \Exception
      */
-    public function __doRequest($request, $location, $action, $version, $one_way = 0)
+    public function __doRequest(string $request, string $location, string $action, int $version, $oneWay = 0): string
     {
         $this->curlPlusClient->initialize($location, true);
         $this->curlPlusClient->setCurlOpt(CURLOPT_POSTFIELDS, (string)$request);
@@ -511,8 +489,9 @@ class SoapClientPlus extends \SoapClient
             $this->_debugResults[] = $ret;
         }
 
-        if ($ret->responseBody == false || $ret->httpCode !== 200)
-            throw new \Exception('DCarbone\SoapClientPlus::__doRequest - CURL Error during call: "'. addslashes($ret->curlError).'", "'.addslashes($ret->responseBody).'"');
+        if (false == $ret->responseBody || 200 !== $ret->httpCode) {
+            throw new \Exception('DCarbone\SoapClientPlus::__doRequest - CURL Error during call: "' . addslashes($ret->curlError) . '", "' . addslashes($ret->responseBody) . '"');
+        }
 
         return $ret->responseBody;
     }
@@ -520,7 +499,7 @@ class SoapClientPlus extends \SoapClient
     /**
      * @return CurlPlusClient
      */
-    public function getCurlClient()
+    public function getCurlClient(): CurlPlusClient
     {
         return $this->curlPlusClient;
     }
@@ -529,21 +508,17 @@ class SoapClientPlus extends \SoapClient
      * @param array $requestHeaders
      * @return void
      */
-    public function setRequestHeaders(array $requestHeaders)
+    public function setRequestHeaders(array $requestHeaders): void
     {
         // For backwards compatibility sakes.
         $key = key($requestHeaders);
-        if (is_int($key))
-        {
+        if (is_int($key)) {
             $this->requestHeaders = array();
-            foreach($requestHeaders as $header)
-            {
+            foreach($requestHeaders as $header) {
                 $exp = explode(':', $header, 2);
                 $this->requestHeaders[$exp[0]] = $exp[1];
             }
-        }
-        else
-        {
+        } else {
             $this->requestHeaders = $requestHeaders;
         }
     }
@@ -551,7 +526,7 @@ class SoapClientPlus extends \SoapClient
     /**
      * @return array
      */
-    public function getRequestHeaders()
+    public function getRequestHeaders(): array
     {
         return $this->requestHeaders;
     }
@@ -560,7 +535,7 @@ class SoapClientPlus extends \SoapClient
      * @deprecated No longer differentiating between "user" and "default" request headers.  Use getRequestHeaders instead
      * @return array
      */
-    public function getDefaultRequestHeaders()
+    public function getDefaultRequestHeaders(): array
     {
         return $this->requestHeaders;
     }
@@ -570,7 +545,7 @@ class SoapClientPlus extends \SoapClient
      * @param array $headers
      * @return $this
      */
-    public function setDefaultRequestHeaders(array $headers)
+    public function setDefaultRequestHeaders(array $headers): static
     {
         $this->requestHeaders = $headers;
         return $this;
@@ -581,19 +556,19 @@ class SoapClientPlus extends \SoapClient
      * @param string $value
      * @return $this
      */
-    public function setRequestHeader($name, $value)
+    public function setRequestHeader(string $name, string $value): static
     {
         $this->requestHeaders[$name] = $value;
         return $this;
     }
 
     /**
-     * @deprecated This method has been deprecated in favor of the setRequestHeader method
-     *
      * @param string $header
      * @return $this
+     *@deprecated This method has been deprecated in favor of the setRequestHeader method
+     *
      */
-    public function addRequestHeaderString($header)
+    public function addRequestHeaderString(string $header): static
     {
         $exp = explode(':', $header, 2);
         return $this->setRequestHeader($exp[0], $exp[1]);
@@ -602,7 +577,7 @@ class SoapClientPlus extends \SoapClient
     /**
      * @return $this
      */
-    public function resetRequestHeaders()
+    public function resetRequestHeaders(): static
     {
         $this->requestHeaders = $this->_defaultRequestHeaders;
         return $this;
@@ -613,7 +588,7 @@ class SoapClientPlus extends \SoapClient
      * @param mixed $value
      * @return $this
      */
-    public function setCurlOpt($opt, $value)
+    public function setCurlOpt(int $opt, mixed $value): static
     {
         $this->curlOptArray[$opt] = $value;
         return $this;
@@ -623,11 +598,9 @@ class SoapClientPlus extends \SoapClient
      * @param int $opt
      * @return $this
      */
-    public function removeCurlOpt($opt)
+    public function removeCurlOpt(int $opt): static
     {
-        if (isset($this->curlOptArray[$opt]))
-            unset($this->curlOptArray[$opt]);
-
+        unset($this->curlOptArray[$opt]);
         return $this;
     }
 
@@ -635,7 +608,7 @@ class SoapClientPlus extends \SoapClient
      * @param array $opts
      * @return $this
      */
-    public function setCurlOpts(array $opts)
+    public function setCurlOpts(array $opts): static
     {
         $this->curlOptArray = $opts;
         return $this;
@@ -645,10 +618,11 @@ class SoapClientPlus extends \SoapClient
      * @param bool $humanReadable
      * @return array
      */
-    public function getCurlOpts($humanReadable = false)
+    public function getCurlOpts(bool $humanReadable = false): array
     {
-        if ($humanReadable)
+        if ($humanReadable) {
             return CurlOptHelper::createHumanReadableCurlOptArray($this->curlOptArray);
+        }
 
         return $this->curlOptArray;
     }
@@ -656,7 +630,7 @@ class SoapClientPlus extends \SoapClient
     /**
      * @return $this
      */
-    public function resetCurlOpts()
+    public function resetCurlOpts(): static
     {
         $this->curlOptArray = $this->_defaultCurlOptArray;
         return $this;
@@ -667,7 +641,7 @@ class SoapClientPlus extends \SoapClient
      *
      * @return SoapClientPlus
      */
-    public function reset()
+    public function reset(): static
     {
         $this->getCurlClient()->reset();
         $this->resetCurlOpts();
@@ -682,27 +656,25 @@ class SoapClientPlus extends \SoapClient
      * @return string
      * @throws \RuntimeException
      */
-    protected static function setupWSDLCachePath(array $options)
+    protected static function setupWSDLCachePath(array $options): string
     {
-        if (isset($options['wsdl_cache_path']))
-            $wsdlCachePath = $options['wsdl_cache_path'];
-        else
-            $wsdlCachePath = sys_get_temp_dir();
+        $wsdlCachePath = $options['wsdl_cache_path'] ?? sys_get_temp_dir();
 
         $realpath = realpath($wsdlCachePath);
 
-        if ($realpath === false)
-        {
-            $created = (bool)@mkdir($wsdlCachePath);
+        if ($realpath === false) {
+            $created = @mkdir($wsdlCachePath);
 
-            if ($created === false)
-                throw new \RuntimeException('Could not find / create WSDL cache directory at path "'.$wsdlCachePath.'".');
+            if ($created === false) {
+                throw new \RuntimeException('Could not find / create WSDL cache directory at path "' . $wsdlCachePath . '".');
+            }
 
             $realpath = realpath($wsdlCachePath);
         }
 
-        if (!is_writable($realpath))
-            throw new \RuntimeException('WSDL Cache Directory "'.$realpath.'" is not writable.');
+        if (!is_writable($realpath)) {
+            throw new \RuntimeException('WSDL Cache Directory "' . $realpath . '" is not writable.');
+        }
 
         $realpath .= DIRECTORY_SEPARATOR;
 
@@ -714,38 +686,31 @@ class SoapClientPlus extends \SoapClient
      * @return array
      * @throws \InvalidArgumentException
      */
-    protected static function createCurlOptArray(array $options)
+    protected static function createCurlOptArray(array $options): array
     {
-        $curlOptArray =  array(
+        $curlOptArray =  [
             CURLOPT_FAILONERROR => true,
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_SSL_VERIFYHOST => false,
             CURLOPT_SSL_VERIFYPEER => false,
             CURLINFO_HEADER_OUT => true,
-        );
-        if (isset($options['login']) && isset($options['password']))
-        {
+        ];
+        if (isset($options['login']) && isset($options['password'])) {
             // Set the password in the client
             $curlOptArray[CURLOPT_USERPWD] = $options['login'].':'.$options['password'];
 
             // Attempt to set the Auth type requested
-            if (isset($options['auth_type']))
-            {
+            if (isset($options['auth_type'])) {
                 $authType = strtolower($options['auth_type']);
-                switch($authType)
-                {
-                    case 'basic'    : $curlOptArray[CURLOPT_HTTPAUTH] = CURLAUTH_BASIC;   break;
-                    case 'ntlm'     : $curlOptArray[CURLOPT_HTTPAUTH] = CURLAUTH_NTLM;    break;
-                    case 'digest'   : $curlOptArray[CURLOPT_HTTPAUTH] = CURLAUTH_DIGEST;  break;
-                    case 'any'      : $curlOptArray[CURLOPT_HTTPAUTH] = CURLAUTH_ANY;     break;
-                    case 'anysafe'  : $curlOptArray[CURLOPT_HTTPAUTH] = CURLAUTH_ANYSAFE; break;
-
-                    default :
-                        throw new \InvalidArgumentException('Unknown Authentication type "'.$options['auth_type'].'" requested');
-                }
-            }
-            else
-            {
+                $curlOptArray[CURLOPT_HTTPAUTH] = match ($authType) {
+                    'basic' => CURLAUTH_BASIC,
+                    'ntlm' => CURLAUTH_NTLM,
+                    'digest' => CURLAUTH_DIGEST,
+                    'any' => CURLAUTH_ANY,
+                    'anysafe' => CURLAUTH_ANYSAFE,
+                    default => throw new \InvalidArgumentException('Unknown Authentication type "' . $options['auth_type'] . '" requested'),
+                };
+            } else {
                 $curlOptArray[CURLOPT_HTTPAUTH] = CURLAUTH_ANY;
             }
         }
@@ -757,29 +722,23 @@ class SoapClientPlus extends \SoapClient
      * @param array $options
      * @return array
      */
-    protected static function createSoapOptionArray(array $options)
+    protected static function createSoapOptionArray(array $options): array
     {
-        if (isset($options['login']))
-            unset($options['login']);
-
-        if (isset($options['password']))
-            unset($options['password']);
-
-        if (isset($options['wsdl_cache_path']))
-            unset($options['wsdl_cache_path']);
-
-        if (isset($options['auth_type']))
-            unset($options['auth_type']);
-
-        if (isset($options['debug']))
-            unset($options['debug']);
+        unset(
+            $options['login'],
+            $options['password'],
+            $options['wsdl_cache_path'],
+            $options['auth_type'],
+            $options['debug']
+        );
 
         $options['exceptions'] = 1;
         $options['trace'] = 1;
         $options['cache_wsdl'] = WSDL_CACHE_NONE;
 
-        if (!isset($options['user_agent']))
+        if (!isset($options['user_agent'])) {
             $options['user_agent'] = 'SoapClientPlus';
+        }
 
         return $options;
     }

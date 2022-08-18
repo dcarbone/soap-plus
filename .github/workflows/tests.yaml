@@ -1,0 +1,44 @@
+name: "Tests"
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - master
+    paths:
+      - '**.php'
+      - 'composer.json'
+      - 'composer.lock'
+      - 'phpunit.xml'
+  push:
+    branches:
+      - master
+    paths:
+      - '**.php'
+      - 'composer.json'
+      - 'composer.lock'
+      - 'phpunit.xml'
+      - '.github/workflows/tests.yaml'
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php-version: ["8.0", "8.1"]
+
+    name: Tests - PHP ${{ matrix.php-version }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          extensions: soap libxml simplexml curl
+      - run: |
+          composer update \
+          --no-ansi \
+          --no-interaction \
+          --no-scripts \
+          --no-progress
+      - run: |
+          ./vendor/bin/phpunit -c phpunit.xml.dist

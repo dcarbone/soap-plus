@@ -4,3 +4,4 @@
 /vendor
 /test-reports
 /tests/misc/wsdl-cache
+.phpunit.result.cache
