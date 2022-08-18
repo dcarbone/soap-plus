@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 require __DIR__.'/../misc/cleanup.php';
 
@@ -8,7 +8,7 @@ require __DIR__.'/../misc/cleanup.php';
 class SoapClientPlusTest extends \PHPUnit\Framework\TestCase
 {
     /** @var string */
-    public static $weatherWSDL = "http://ws.cdyne.com/emailverify/Emailvernotestemail.asmx?WSDL";
+    public const WEATHER_WSDL = "http://ws.cdyne.com/emailverify/Emailvernotestemail.asmx?WSDL";
 
     /**
      * @covers \DCarbone\SoapPlus\SoapClientPlus::__construct
@@ -24,8 +24,8 @@ class SoapClientPlusTest extends \PHPUnit\Framework\TestCase
      */
     public function testCanConstructSoapClientPlusWithNoOptions()
     {
-		echo self::$weatherWSDL;
-        $soapClient = new \DCarbone\SoapPlus\SoapClientPlus(self::$weatherWSDL);
+		echo self::WEATHER_WSDL;
+        $soapClient = new \DCarbone\SoapPlus\SoapClientPlus(self::WEATHER_WSDL);
 
         $this->assertInstanceOf('\\DCarbone\\SoapPlus\\SoapClientPlus', $soapClient);
 
@@ -60,7 +60,7 @@ class SoapClientPlusTest extends \PHPUnit\Framework\TestCase
      */
     public function testCanConstructSoapClientPlusWithCustomCacheDirectory()
     {
-        $soapClient = new \DCarbone\SoapPlus\SoapClientPlus(self::$weatherWSDL,
+        $soapClient = new \DCarbone\SoapPlus\SoapClientPlus(self::WEATHER_WSDL,
             array('wsdl_cache_path' => __DIR__.'/../misc/wsdl-cache'));
 
         $this->assertInstanceOf('\\DCarbone\\SoapPlus\\SoapClientPlus', $soapClient);
@@ -175,7 +175,7 @@ XML;
      */
     public function testCanConstructSoapClientPlusWithValidAuthCredentials()
     {
-        $soapClient = new \DCarbone\SoapPlus\SoapClientPlus(self::$weatherWSDL, array(
+        $soapClient = new \DCarbone\SoapPlus\SoapClientPlus(self::WEATHER_WSDL, array(
             'wsdl_cache_path' => __DIR__.'/../misc/wsdl-cache',
             'login' => 'my_login',
             'password' => 'my_password',
@@ -197,7 +197,7 @@ XML;
     public function testExceptionThrownWhenInvalidAuthTypeSpecified()
     {
         $this->expectException(InvalidArgumentException::class);
-        $soapClient = new \DCarbone\SoapPlus\SoapClientPlus(self::$weatherWSDL, array(
+        $soapClient = new \DCarbone\SoapPlus\SoapClientPlus(self::WEATHER_WSDL, array(
             'wsdl_cache_path' => __DIR__.'/../misc/wsdl-cache',
             'login' => 'my_login',
             'password' => 'my_password',
@@ -237,7 +237,7 @@ XML;
     public function testExceptionThrownWhenAttemptingToSetWSDLCacheMemory()
     {
         $this->expectException(RuntimeException::class);
-        $soapClient = new \DCarbone\SoapPlus\SoapClientPlus(self::$weatherWSDL, array(
+        $soapClient = new \DCarbone\SoapPlus\SoapClientPlus(self::WEATHER_WSDL, array(
             'cache_wsdl' => WSDL_CACHE_MEMORY,
         ));
     }
@@ -249,7 +249,7 @@ XML;
     public function testExceptionThrownWhenAttemptingToSetWSDLCacheBoth()
     {
         $this->expectException(RuntimeException::class);
-        $soapClient = new \DCarbone\SoapPlus\SoapClientPlus(self::$weatherWSDL, array(
+        $soapClient = new \DCarbone\SoapPlus\SoapClientPlus(self::WEATHER_WSDL, array(
             'cache_wsdl' => WSDL_CACHE_BOTH,
         ));
     }
@@ -259,7 +259,7 @@ XML;
      */
     public function testDebugDisabledByDefault()
     {
-        $soapClient = new \DCarbone\SoapPlus\SoapClientPlus(self::$weatherWSDL);
+        $soapClient = new \DCarbone\SoapPlus\SoapClientPlus(self::WEATHER_WSDL);
 
         $this->assertFalse($soapClient->debugEnabled());
 
@@ -284,7 +284,7 @@ XML;
      */
     public function testCanConstructWithDebugEnabled()
     {
-        $soapClient = new \DCarbone\SoapPlus\SoapClientPlus(self::$weatherWSDL, array(
+        $soapClient = new \DCarbone\SoapPlus\SoapClientPlus(self::WEATHER_WSDL, array(
             'debug' => true,
         ));
 
@@ -310,7 +310,7 @@ XML;
      */
     public function testCanGetCurlClient()
     {
-        $soapClient = new \DCarbone\SoapPlus\SoapClientPlus(self::$weatherWSDL);
+        $soapClient = new \DCarbone\SoapPlus\SoapClientPlus(self::WEATHER_WSDL);
 
         $curlPlusClient = $soapClient->getCurlClient();
 
