@@ -3,7 +3,7 @@
 namespace DCarbone\SoapPlus;
 
 /*
-   Copyright 2012-2016 Daniel Carbone (daniel.p.carbone@gmail.com)
+   Copyright 2012-2022 Daniel Carbone (daniel.p.carbone@gmail.com)
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
