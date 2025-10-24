@@ -323,9 +323,9 @@ class SoapClientPlus extends \SoapClient
      * @param string $name
      * @param string|array $args
      * @return mixed
-     * @deprecated
+     * @deprecated 8.1.0
      */
-    public function __call(string $name, $args)
+    public function __call(string $name, array $args): mixed
     {
         array_unshift($args, $name);
         return call_user_func_array('self::__soapCall', $args);
@@ -342,7 +342,13 @@ class SoapClientPlus extends \SoapClient
      * @return mixed|void
      * @throws \Exception
      */
-    public function __soapCall(string $name, string|array $args, $options = [], $inputHeaders = [], &$outputHeaders = [])
+    public function __soapCall(
+       string $name,
+       array $args,
+       ?array $options = null,
+       $inputHeaders = null,
+       &$outputHeaders = null
+    ): mixed
     {
         if (is_string($args)) {
             $args = $this->createArgumentArrayFromXML($args, $name);
