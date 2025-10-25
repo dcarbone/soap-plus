@@ -488,6 +488,8 @@ class SoapClientPlus extends SoapClient
             $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         }
 
+        curl_close($ch);
+
         if (false === $resp || 200 !== $httpCode) {
             throw new \Exception('DCarbone\SoapClientPlus::__doRequest - CURL Error during call: "' . addslashes($err) . '", "' . addslashes($resp) . '"');
         }
