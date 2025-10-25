@@ -20,25 +20,43 @@ on:
       - 'phpunit.xml'
       - '.github/workflows/tests.yaml'
 
+permissions:
+  actions: none
+  attestations: none
+  checks: none
+  contents: read
+  deployments: none
+  id-token: none
+  issues: none
+  models: none
+  discussions: none
+  packages: none
+  pages: none
+  pull-requests: none
+  security-events: none
+  statuses: none
+
 jobs:
   tests:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        php-version: ["8.0", "8.1"]
+        php-version: ["8.2", "8.3", "8.4"]
 
-    name: Tests - PHP ${{ matrix.php-version }}
+    name: 'Tests - PHP ${{ matrix.php-version }}'
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v5
       - uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php-version }}
           extensions: soap libxml simplexml curl
+        # language=sh
       - run: |
           composer update \
           --no-ansi \
           --no-interaction \
           --no-scripts \
           --no-progress
+        # language=sh
       - run: |
           ./vendor/bin/phpunit -c phpunit.xml.dist

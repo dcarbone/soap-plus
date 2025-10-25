@@ -1,7 +1,6 @@
-/.idea
-/*.iml
-/composer.lock
-/vendor
-/test-reports
+.idea/
+test-reports/
+vendor/
 /tests/misc/wsdl-cache
+*.iml
 .phpunit.result.cache
