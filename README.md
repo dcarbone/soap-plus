@@ -1,8 +1,6 @@
 soap-plus
 =========
 
-[![Tests](https://github.com/dcarbone/soap-plus/actions/workflows/tests.yaml/badge.svg?branch=master)](https://github.com/dcarbone/soap-plus/actions/workflows/tests.yaml)
-
 In a nutshell, this class replaces the internal query mechanism used by PHP's <a href="http://www.php.net/manual/en/class.soapclient.php">SoapClient</a> class.
 The main reason for this wrapper is to enable consumption of NTLM-authenticated SharePoint SOAP services in a PHP application.
 This is not a data-mapper, it simply returns data as the normal SoapClient would, but all of the internal querying
@@ -16,7 +14,7 @@ This lib is designed to be used with [Composer](https://getcomposer.org)
 
 ```json
 {
-    "dcarbone/soap-plus": "2.1.*"
+    "dcarbone/soap-plus": "^3.0"
 }
 ```
 
@@ -36,14 +34,16 @@ usable.  To see a list of built-in available options, see here <a href="http://w
 * anysafe
 * NULL / undefined
 
-These directly relate to the built-in CURLAUTH_XXX options available (<a href="http://www.php.net//manual/en/function.curl-setopt.php" target="_blank">see here</a>, search for "CURLAUTH")
+These directly relate to the built-in CURLAUTH_XXX options available 
+(<a href="http://www.php.net//manual/en/function.curl-setopt.php" target="_blank">see here</a>, search for "CURLAUTH")
 It is entirely optional, and should only be set if you also define `"login"` and `"password"` options.
 
 If you define a remote WSDL, the same parameters will be used for WSDL retrieval as well as querying.
 
 **user_agent**
 
-This property is optional, and allows you to define a custom <a href="http://en.wikipedia.org/wiki/User_agent" target="_blank">User Agent</a> header value in requests.
+This property is optional, and allows you to define a custom 
+<a href="http://en.wikipedia.org/wiki/User_agent" target="_blank">User Agent</a> header value in requests.
 
 **debug**
 
