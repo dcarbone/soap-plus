@@ -43,7 +43,7 @@ jobs:
       matrix:
         php-version: ["8.2", "8.3", "8.4"]
 
-    name: 'Tests - PHP ${{ matrix.php-version }}''
+    name: 'Tests - PHP ${{ matrix.php-version }}'
     steps:
       - uses: actions/checkout@v5
       - uses: shivammathur/setup-php@v2
