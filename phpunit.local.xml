@@ -1,20 +1,22 @@
 <?xml version="1.0"?>
 <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/9.3/phpunit.xsd"
+         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/12.4/phpunit.xsd"
          bootstrap="./vendor/autoload.php"
          colors="true"
-         verbose="true">
-    <coverage includeUncoveredFiles="true">
-        <include>
-            <directory suffix=".php">./src</directory>
-        </include>
-        <report>
-            <html outputDirectory="./test-reports/report" lowUpperBound="35" highLowerBound="70"/>
-        </report>
-    </coverage>
-    <testsuite name="SoapPlus">
-        <directory>./tests/SoapPlus</directory>
-        <exclude>./tests/misc</exclude>
-    </testsuite>
-    <logging/>
+         cacheDirectory=".phpunit.cache">
+  <coverage includeUncoveredFiles="true">
+    <report>
+      <html outputDirectory="./test-reports/report" lowUpperBound="35" highLowerBound="70"/>
+    </report>
+  </coverage>
+  <testsuite name="SoapPlus">
+    <directory>./tests</directory>
+    <exclude>./tests/misc</exclude>
+  </testsuite>
+  <logging/>
+  <source>
+    <include>
+      <directory suffix=".php">./src</directory>
+    </include>
+  </source>
 </phpunit>

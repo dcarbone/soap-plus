@@ -16,19 +16,23 @@
     }
   ],
   "require": {
-    "php": "^8.0",
+    "php": ">=8.2",
     "ext-curl": "*",
     "ext-libxml": "*",
     "ext-simplexml": "*",
-    "ext-soap": "*",
-    "dcarbone/curl-plus": "3.0.*"
+    "ext-soap": "*"
   },
   "require-dev": {
-    "phpunit/phpunit": "^8.0 || ^9.0"
+    "phpunit/phpunit": "^11.0"
   },
   "autoload": {
     "psr-4": {
       "DCarbone\\SoapPlus\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "DCarbone\\SoapPlus\\Tests\\": "tests/"
     }
   }
 }
