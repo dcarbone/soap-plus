@@ -467,7 +467,6 @@ class SoapClientPlus extends SoapClient
 
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
 
-
         $resp = curl_exec($ch);
         $err = curl_error($ch);
 

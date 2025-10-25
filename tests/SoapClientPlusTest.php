@@ -131,7 +131,7 @@ XML;
         $this->assertInstanceOf('\\DCarbone\\SoapPlus\\SoapClientPlus', $soapClient);
 
         $options = $soapClient->options;
-        $soapOptions =$soapClient->soapOptions;
+        $soapOptions = $soapClient->soapOptions;
 
         $this->assertArrayHasKey('login', $options);
         $this->assertArrayNotHasKey('login', $soapOptions);
@@ -168,7 +168,7 @@ XML;
     public function testExceptionThrownWhenAttemptingToSetWSDLCacheBoth(): void
     {
         $this->expectException(RuntimeException::class);
-        $soapClient = new SoapClientPlus(self::TEMP_CONVERT_WSDL, array(
+        new SoapClientPlus(self::TEMP_CONVERT_WSDL, array(
             'cache_wsdl' => WSDL_CACHE_BOTH,
         ));
     }
