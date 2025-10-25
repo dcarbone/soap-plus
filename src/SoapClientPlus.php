@@ -313,7 +313,7 @@ class SoapClientPlus extends SoapClient
     public function __call(string $name, $args): mixed
     {
         array_unshift($args, $name);
-        return call_user_func_array(self::__soapCall(...), $args);
+        return call_user_func_array([$this, '__soapCall'], $args);
     }
 
     /**
@@ -490,7 +490,7 @@ class SoapClientPlus extends SoapClient
         curl_close($ch);
 
         if (false === $resp || 200 !== $httpCode) {
-            throw new \Exception('DCarbone\SoapClientPlus::__doRequest - CURL Error during call: "' . addslashes($err) . '", "' . addslashes($resp) . '"');
+            throw new Exception('DCarbone\SoapClientPlus::__doRequest - CURL Error during call: "' . addslashes($err) . '", "' . addslashes($resp) . '"');
         }
 
         return $resp;
