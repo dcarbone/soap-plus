@@ -470,8 +470,7 @@ class SoapClientPlus extends SoapClient
         $resp = curl_exec($ch);
         $err = curl_error($ch);
 
-        if ($this->debugEnabled())
-        {
+        if ($this->debugEnabled()) {
             $info = curl_getinfo($ch);
             $httpCode = $info['http_code'];
             $this->_debugQueries[] = array(
