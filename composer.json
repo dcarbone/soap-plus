@@ -16,7 +16,7 @@
     }
   ],
   "require": {
-    "php": ">=8.2",
+    "php": "^8.5",
     "ext-curl": "*",
     "ext-libxml": "*",
     "ext-simplexml": "*",
