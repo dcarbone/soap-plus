@@ -429,7 +429,7 @@ class SoapClientPlus extends SoapClient
      * @return string
      * @throws \Exception
      */
-    public function __doRequest(string $request, string $location, string $action, int $version, bool $oneWay = false): ?string
+    public function __doRequest(string $request, string $location, string $action, int $version, bool $oneWay = false, ?string $uriParserClass = null): ?string
     {
         $ch = curl_init($location);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $request);
