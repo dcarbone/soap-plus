@@ -316,6 +316,26 @@ class SoapClientPlus extends SoapClient
         return call_user_func_array([$this, '__soapCall'], $args);
     }
 
+   /**
+     * __soapCall overload
+     *
+     * @param string $name
+     * @param string|array $args
+     * @param array $options
+     * @param array $inputHeaders
+     * @param array $outputHeaders
+     * @return mixed
+     * @throws \Exception
+     */
+    public function __soapCall(string $name, string|array $args, $options = [], $inputHeaders = [], &$outputHeaders = []): mixed
+    {
+        if (is_string($args)) {
+            $args = $this->createArgumentArrayFromXML($args, $name);
+        }
+
+        return parent::__soapCall($name, $args, $options, $inputHeaders, $outputHeaders);
+    }
+
     /**
      * Parse things because soap.
      *
