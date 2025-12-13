@@ -41,7 +41,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        php-version: ["8.2", "8.3", "8.4"]
+        php-version: ["8.5"]
 
     name: 'Tests - PHP ${{ matrix.php-version }}'
     steps:

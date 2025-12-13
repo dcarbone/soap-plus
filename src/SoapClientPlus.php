@@ -310,7 +310,7 @@ class SoapClientPlus extends SoapClient
      * @return mixed
      * @deprecated
      */
-    public function __call(string $name, $args): mixed
+    public function __call(string $name, array $args): mixed
     {
         array_unshift($args, $name);
         return call_user_func_array([$this, '__soapCall'], $args);
@@ -449,7 +449,7 @@ class SoapClientPlus extends SoapClient
      * @return string
      * @throws \Exception
      */
-    public function __doRequest(string $request, string $location, string $action, int $version, $oneWay = 0): string
+    public function __doRequest(string $request, string $location, string $action, int $version, bool $oneWay = false, ?string $uriParserClass = null): ?string
     {
         $ch = curl_init($location);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $request);
