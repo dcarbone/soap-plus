@@ -8,15 +8,16 @@ is handled by the PHP CURL library.
 
 ## Installation
 
-This lib is designed to be used with [Composer](https://getcomposer.org)
+This lib is designed to be used with [Composer](https://getcomposer.org), and different versions of
+PHP will require different versions of this library.
 
-"Require" entry:
+### Version Reference Table
 
-```json
-{
-    "dcarbone/soap-plus": "^3.0"
-}
-```
+| PHP Versions      | SOAPPlus Version | Supported |
+|-------------------|------------------|-----------|
+| `~8.5.0`          | `4.x`            | Yes       |
+| `>=8.2.0 < 8.5.0` | `3.x`            | Yes       |
+| `<=8.1`           | `2.x`            | No        |
 
 ## Constructor
 
